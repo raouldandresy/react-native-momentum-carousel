@@ -11,8 +11,8 @@ import { styles } from './style';
  * - `keyExtractor`: Function that provides a unique key for each item, defaulting to index if not provided.
  * - `onSnap`: Callback that is triggered when an item is snapped to the center of the carousel.
  * - `accessibilityLabelCarousel`: Optional accessibility label for the carousel.
- * - `onMomentumScrollStart`: Callback triggered when momentum scrolling starts.
- * - `onMomentumScrollEnd`: Callback triggered when momentum scrolling ends.
+ * - `onMomentumScrollStart`: Optional Callback triggered when momentum scrolling starts.
+ * - `onMomentumScrollEnd`: Optional Callback triggered when momentum scrolling ends.
  * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
  * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
  * - `autoPlayInterval`: Optional number for automatic scrolling through the carousel.
@@ -25,8 +25,8 @@ interface CarouselProps<Item> {
   keyExtractor?: (item: Item, index: number) => string;
   onSnap: (index: number) => void;
   accessibilityLabelCarousel?: string;
-  onMomentumScrollStart: () => void;
-  onMomentumScrollEnd: () => void;
+  onMomentumScrollStart?: () => void;
+  onMomentumScrollEnd?: () => void;
   autoPlay?: boolean;
   loop?: boolean;
   autoPlayInterval?: number;

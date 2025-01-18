@@ -26,8 +26,8 @@ declare interface CarouselProps<Item> {
   keyExtractor?: (item: Item, index: number) => string; // Optional function to generate a unique key for each item (defaults to index)
   onSnap: (index: number) => void; // Callback triggered when the carousel snaps to a new item
   accessibilityLabelCarousel?: string; // Optional accessibility label for the carousel
-  onMomentumScrollStart: () => void; // Callback triggered when momentum scrolling starts
-  onMomentumScrollEnd: () => void; // Callback triggered when momentum scrolling ends
+  onMomentumScrollStart?: () => void; // Optional Callback triggered when momentum scrolling starts
+  onMomentumScrollEnd?: () => void; // Optional Callback triggered when momentum scrolling ends
   autoPlay?: boolean; // Optional boolean to enable automatic scrolling through the carousel items
   loop?: boolean; // Optional boolean to enable looping of the carousel
   autoPlayInterval?: number; // Optional number for automatic scrolling through the carousel items
