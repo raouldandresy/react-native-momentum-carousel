@@ -1,18 +1,22 @@
 import * as React from 'react';
 import { ListRenderItem } from 'react-native';
 
+
 /**
  * CarouselProps defines the expected properties for the CarouselMomentum component.
+ * These properties are used to configure the carousel, its behavior, and appearance.
+ * 
  * - `data`: Array of items to be displayed in the carousel.
  * - `sliderWidth`: The width of the carousel container (viewport).
  * - `itemWidth`: The width of each individual item in the carousel.
  * - `renderItem`: A function to render each item in the carousel.
  * - `keyExtractor`: An optional function that provides a unique key for each item (defaults to index if not provided).
  * - `onSnap`: A callback that is triggered when an item is snapped to the center of the carousel.
- * - `accessibilityLabelCarousel`: Optional string for accessibility label of the carousel.
- * - `onMomentumScrollStart`: A callback triggered when momentum scroll starts.
- * - `onMomentumScrollEnd`: A callback triggered when momentum scroll ends.
- * - `autoPlay`: An optional boolean that, if true, enables automatic scrolling through the carousel items.
+ * - `accessibilityLabelCarousel`: Optional string for accessibility label of the carousel, improving accessibility.
+ * - `onMomentumScrollStart`: A callback triggered when momentum scrolling starts.
+ * - `onMomentumScrollEnd`: A callback triggered when momentum scrolling ends.
+ * - `autoPlay`: An optional boolean that, if set to `true`, enables automatic scrolling through the carousel items.
+ * - `loop`: Optional boolean that enables looping the carousel when reaching the last item.
  */
 declare interface CarouselProps<Item> {
   data: Item[]; // Array of items to display in the carousel
@@ -25,6 +29,7 @@ declare interface CarouselProps<Item> {
   onMomentumScrollStart: () => void; // Callback triggered when momentum scrolling starts
   onMomentumScrollEnd: () => void; // Callback triggered when momentum scrolling ends
   autoPlay?: boolean; // Optional boolean to enable automatic scrolling through the carousel items
+  loop?: boolean; // Optional boolean to enable looping of the carousel
 }
 
 /**

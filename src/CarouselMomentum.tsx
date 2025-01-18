@@ -14,6 +14,7 @@ import { styles } from './style';
  * - `onMomentumScrollStart`: Callback triggered when momentum scrolling starts.
  * - `onMomentumScrollEnd`: Callback triggered when momentum scrolling ends.
  * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
+ * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
  */
 interface CarouselProps<Item> {
   data: Item[];
@@ -25,7 +26,8 @@ interface CarouselProps<Item> {
   accessibilityLabelCarousel?: string;
   onMomentumScrollStart: () => void;
   onMomentumScrollEnd: () => void;
-  autoPlay?: boolean; // Optional autoplay feature
+  autoPlay?: boolean;
+  loop?: boolean;
 }
 
 // Create an animated version of FlatList to support animations
@@ -47,7 +49,8 @@ const CarouselMomentum = <Item,>(
     accessibilityLabelCarousel,
     onMomentumScrollStart,
     onMomentumScrollEnd,
-    autoPlay
+    autoPlay,
+    loop
   }: CarouselProps<Item>,
   ref: ForwardedRef<FlatList<Item>>,
 ) => {
@@ -80,10 +83,9 @@ const CarouselMomentum = <Item,>(
       const offsetX = e.nativeEvent.contentOffset.x; // Get the horizontal scroll offset
       scrollX.setValue(offsetX); // Update the scroll position for animations
       const nextIndex = Math.round(offsetX / itemWidth); // Calculate the current index
-      setCurrentIndex(nextIndex); // Update the state with the new index
-
       // If the index changes, call the onSnap callback
       if (nextIndex !== currentIndex) {
+        setCurrentIndex(nextIndex); // Update the state with the new index
         onSnap(nextIndex);
       }
     },
@@ -107,14 +109,20 @@ const CarouselMomentum = <Item,>(
    * It also triggers the snap-to-item callback (`onSnap`).
    */
   const goToIndex = useCallback((index: number) => {
-    // Check if FlatList reference exists and current index is valid
-    if (flatListRef.current && currentIndex < data.length - 1) {
-      const offset = calculateItemOffsetStatic(index); // Calculate the offset for the given index
-      flatListRef.current?.scrollToOffset({ animated: true, offset }); // Scroll to the desired offset
-      setCurrentIndex(index); // Update the current index state
-      onSnap(index); // Trigger the onSnap callback
+    // Calculate the index with wrapping around (modulo operation)
+    let loopedIndex = index;
+    if(loop){
+      loopedIndex = (index + data.length) % data.length;
     }
-  }, [currentIndex, data.length, calculateItemOffsetStatic, onSnap]);
+    // Ensure the FlatList reference is available before attempting to scroll
+    if (flatListRef.current) {
+      const offset = calculateItemOffsetStatic(loopedIndex); // Calculate the offset for the given index
+      flatListRef.current?.scrollToOffset({ animated: true, offset }); // Scroll to the desired offset
+      setCurrentIndex(loopedIndex); // Update the current index state
+      onSnap(loopedIndex); // Trigger the onSnap callback to notify the parent component
+    }
+  }, [data.length, calculateItemOffsetStatic, onSnap]);
+  
 
   /**
    * startAutoplay starts the autoplay functionality by setting an interval to change the index every 3 seconds.
@@ -126,9 +134,21 @@ const CarouselMomentum = <Item,>(
       return;
     }
     autoplayRef.current = setInterval(() => {
-      goToIndex(currentIndex + 1); // Advance to the next item
+      // Automatically loop to the next index and reset to 0 if at the last item
+      let nextIndex = 0;
+      if(loop){
+        nextIndex = (currentIndex + 1) % data.length;
+        goToIndex(nextIndex); 
+      } else {
+        if(currentIndex + 1 > data.length - 1){
+          stopAutoplay();
+        } else {
+          nextIndex = (currentIndex + 1);
+          goToIndex(nextIndex); 
+        }
+      }
     }, 3000); // Advance every 3 seconds
-  }, [goToIndex]);
+  }, [goToIndex, currentIndex, data.length]);
 
   /**
    * stopAutoplay stops the autoplay functionality by clearing the interval.
@@ -144,12 +164,17 @@ const CarouselMomentum = <Item,>(
   // UseEffect hook to start/stop autoplay based on the `autoPlay` prop
   useEffect(() => {
     if (autoPlay) {
-      startAutoplay(); // Start autoplay when enabled
+      startAutoplay(); // Start autoplay if enabled
       return () => {
-        stopAutoplay(); // Stop autoplay when component unmounts or autoPlay changes
+        // Cleanup autoplay when component unmounts or autoPlay is turned off
+        stopAutoplay()
       };
+    } else {
+      // If autoplay is disabled, clear the interval
+      stopAutoplay()
     }
-  }, [autoPlay, startAutoplay, stopAutoplay]);
+  }, [autoPlay, startAutoplay]);
+  
 
   /**
    * calculateCenteredItemOffset calculates the dynamic offset to center the item within the carousel.
