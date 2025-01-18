@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useMemo, useImperativeHandle, ForwardedRef } from 'react';
-import { View, FlatList, Animated, ListRenderItem } from 'react-native';
+import { View, FlatList, Animated, ListRenderItem, FlatListProps } from 'react-native';
 import { styles } from './style';
 
 interface CarouselProps<Item> {
@@ -8,8 +8,10 @@ interface CarouselProps<Item> {
   itemWidth: number;
   renderItem: ListRenderItem<Item>;
   keyExtractor?: (item: Item, index: number) => string;
-  onSnapToItem: (index: number) => void;
+  onSnap: (index: number) => void;
   accessibilityLabelCarousel?: string;
+  onMomentumScrollStart: () => void;
+  onMomentumScrollEnd: () => void;
 }
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
@@ -25,8 +27,10 @@ const CarouselMomentum = <Item,>(
     itemWidth,
     renderItem,
     keyExtractor,
-    onSnapToItem,
+    onSnap,
     accessibilityLabelCarousel,
+    onMomentumScrollStart,
+    onMomentumScrollEnd
   }: CarouselProps<Item>,
   ref: ForwardedRef<FlatList<Item>>,
 ) => {
@@ -42,25 +46,25 @@ const CarouselMomentum = <Item,>(
   /**
    * Handles the scrolling event to update the current index.
    */
-  const handleScroll = useMemo(
-    () => Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true }),
-    [scrollX],
-  );
-
-  /**
-   * Updates the current index when the scroll momentum ends.
-   * It also triggers the callback to notify the parent component of the snap-to-item event.
-   */
-  const onMomentumScrollEnd = useCallback(
-    (e) => {
-      const offset = e.nativeEvent.contentOffset.x;
-      const newIndex = Math.round(offset / itemWidth);
-      setCurrentIndex(newIndex);
-      if (newIndex !== currentIndex) {
-        onSnapToItem(newIndex);
+  const handleScroll = useCallback<
+    NonNullable<FlatListProps<Item>['onScroll']>
+  >(
+    e => {
+      const offsetX = e.nativeEvent.contentOffset.x;
+      scrollX.setValue(offsetX);
+      const nextIndex = Math.round(offsetX / itemWidth);
+      setCurrentIndex(nextIndex);
+      if (nextIndex !== currentIndex) {
+        onSnap(nextIndex);
       }
     },
-    [currentIndex, itemWidth, onSnapToItem],
+    [
+      currentIndex,
+      data?.length,
+      itemWidth,
+      onSnap,
+      scrollX,
+    ],
   );
 
   /**
@@ -77,9 +81,9 @@ const CarouselMomentum = <Item,>(
       const offset = calculateItemOffsetStatic(index);
       flatListRef.current?.scrollToOffset({ animated: true, offset });
       setCurrentIndex(index);
-      onSnapToItem(index);
+      onSnap(index);
     }
-  }, [currentIndex, data.length, calculateItemOffsetStatic, onSnapToItem]);
+  }, [currentIndex, data.length, calculateItemOffsetStatic, onSnap]);
 
   /**
    * Calculates the dynamic offset to center the item within the slider.
@@ -95,7 +99,9 @@ const CarouselMomentum = <Item,>(
   /**
    * Extracts the unique key for each item, either using the provided keyExtractor or falling back to the index.
    */
-  const keyExtractorInternal = useCallback(
+  const keyExtractorInternal = useCallback<
+  NonNullable<FlatListProps<Item>['keyExtractor']>
+>(
     (item: Item, index: number) => keyExtractor ? keyExtractor(item, index) : index.toString(),
     [keyExtractor],
   );
@@ -146,6 +152,7 @@ const CarouselMomentum = <Item,>(
         onScroll={handleScroll}
         scrollEventThrottle={16}
         onMomentumScrollEnd={onMomentumScrollEnd}
+        onMomentumScrollStart={onMomentumScrollStart}
         renderItem={renderItemInternal}
         contentContainerStyle={{
           paddingHorizontal: (sliderWidth - itemWidth) / 2,

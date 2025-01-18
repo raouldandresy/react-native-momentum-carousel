@@ -7,8 +7,10 @@ declare interface CarouselProps<Item> {
   itemWidth: number;
   renderItem: ListRenderItem<Item>;
   keyExtractor?: (item: Item, index: number) => string;
-  onSnapToItem: (index: number) => void;
+  onSnap: (index: number) => void;
   accessibilityLabelCarousel?: string;
+  onMomentumScrollStart: () => void;
+  onMomentumScrollEnd: () => void;
 }
 
 declare class CarouselMomentum extends React.Component<
