@@ -15,6 +15,7 @@ import { styles } from './style';
  * - `onMomentumScrollEnd`: Callback triggered when momentum scrolling ends.
  * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
  * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
+ * - `autoPlayInterval`: Optional number for automatic scrolling through the carousel.
  */
 interface CarouselProps<Item> {
   data: Item[];
@@ -28,6 +29,7 @@ interface CarouselProps<Item> {
   onMomentumScrollEnd: () => void;
   autoPlay?: boolean;
   loop?: boolean;
+  autoPlayInterval?: number;
 }
 
 // Create an animated version of FlatList to support animations
@@ -50,7 +52,8 @@ const CarouselMomentum = <Item,>(
     onMomentumScrollStart,
     onMomentumScrollEnd,
     autoPlay,
-    loop
+    loop,
+    autoPlayInterval
   }: CarouselProps<Item>,
   ref: ForwardedRef<FlatList<Item>>,
 ) => {
@@ -147,7 +150,7 @@ const CarouselMomentum = <Item,>(
           goToIndex(nextIndex); 
         }
       }
-    }, 3000); // Advance every 3 seconds
+    }, autoPlayInterval ? autoPlayInterval : 3000); // Advance every 3 seconds
   }, [goToIndex, currentIndex, data.length]);
 
   /**

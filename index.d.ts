@@ -30,6 +30,7 @@ declare interface CarouselProps<Item> {
   onMomentumScrollEnd: () => void; // Callback triggered when momentum scrolling ends
   autoPlay?: boolean; // Optional boolean to enable automatic scrolling through the carousel items
   loop?: boolean; // Optional boolean to enable looping of the carousel
+  autoPlayInterval?: number; // Optional number for automatic scrolling through the carousel items
 }
 
 /**
