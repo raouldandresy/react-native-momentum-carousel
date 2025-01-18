@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo, useImperativeHandle, ForwardedRef } from 'react';
+import React, { useRef, useState, useCallback, useMemo, useImperativeHandle, ForwardedRef, useEffect } from 'react';
 import { View, FlatList, Animated, ListRenderItem, FlatListProps } from 'react-native';
 import { styles } from './style';
 
@@ -13,6 +13,7 @@ import { styles } from './style';
  * - `accessibilityLabelCarousel`: Optional accessibility label for the carousel.
  * - `onMomentumScrollStart`: Callback triggered when momentum scrolling starts.
  * - `onMomentumScrollEnd`: Callback triggered when momentum scrolling ends.
+ * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
  */
 interface CarouselProps<Item> {
   data: Item[];
@@ -24,6 +25,7 @@ interface CarouselProps<Item> {
   accessibilityLabelCarousel?: string;
   onMomentumScrollStart: () => void;
   onMomentumScrollEnd: () => void;
+  autoPlay?: boolean; // Optional autoplay feature
 }
 
 // Create an animated version of FlatList to support animations
@@ -44,7 +46,8 @@ const CarouselMomentum = <Item,>(
     onSnap,
     accessibilityLabelCarousel,
     onMomentumScrollStart,
-    onMomentumScrollEnd
+    onMomentumScrollEnd,
+    autoPlay
   }: CarouselProps<Item>,
   ref: ForwardedRef<FlatList<Item>>,
 ) => {
@@ -56,6 +59,9 @@ const CarouselMomentum = <Item,>(
 
   // Reference to the FlatList component for manual scroll control
   const flatListRef = useRef<FlatList<Item>>(null);
+
+  // Reference for managing autoplay intervals
+  const autoplayRef = useRef<NodeJS.Timeout | null>(null);
 
   // Expose imperative methods to the parent component via the `ref`
   useImperativeHandle(ref, () => ({
@@ -111,6 +117,41 @@ const CarouselMomentum = <Item,>(
   }, [currentIndex, data.length, calculateItemOffsetStatic, onSnap]);
 
   /**
+   * startAutoplay starts the autoplay functionality by setting an interval to change the index every 3 seconds.
+   * It only starts if autoplay is not already running.
+   */
+  const startAutoplay = useCallback(() => {
+    // Start the autoplay cycle only if it's not already running
+    if (autoplayRef.current) {
+      return;
+    }
+    autoplayRef.current = setInterval(() => {
+      goToIndex(currentIndex + 1); // Advance to the next item
+    }, 3000); // Advance every 3 seconds
+  }, [goToIndex]);
+
+  /**
+   * stopAutoplay stops the autoplay functionality by clearing the interval.
+   */
+  const stopAutoplay = useCallback(() => {
+    // Stop the autoplay cycle if it is running
+    if (autoplayRef.current) {
+      clearInterval(autoplayRef.current);
+      autoplayRef.current = null;
+    }
+  }, []);
+
+  // UseEffect hook to start/stop autoplay based on the `autoPlay` prop
+  useEffect(() => {
+    if (autoPlay) {
+      startAutoplay(); // Start autoplay when enabled
+      return () => {
+        stopAutoplay(); // Stop autoplay when component unmounts or autoPlay changes
+      };
+    }
+  }, [autoPlay, startAutoplay, stopAutoplay]);
+
+  /**
    * calculateCenteredItemOffset calculates the dynamic offset to center the item within the carousel.
    * This helps in applying animations to scale the item as it approaches the center of the viewport.
    */
@@ -139,7 +180,7 @@ const CarouselMomentum = <Item,>(
    * The scale is interpolated based on the scroll position (using scrollX) to give a zooming effect
    * as items approach or leave the center of the viewport.
    */
-  const renderItemInternal = useCallback(
+  const renderItemInternal = useCallback<ListRenderItem<Item>>(
     ({ item, index }: { item: Item; index: number }) => (
       <Animated.View
         style={[
@@ -162,7 +203,7 @@ const CarouselMomentum = <Item,>(
           },
         ]}
       >
-        {renderItem({ item, index })} {/* Render the individual item using the provided renderItem prop */}
+        {renderItem({ item, index })}
       </Animated.View>
     ),
     [calculateCenteredItemOffset, itemWidth, renderItem, scrollX], // Recalculate when these values change
