@@ -16,6 +16,7 @@ import { styles } from './style';
  * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
  * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
  * - `autoPlayInterval`: Optional number for automatic scrolling through the carousel.
+ * - `inactiveScale`: Optional number for scale inactive items
  */
 interface CarouselProps<Item> {
   data: Item[];
@@ -30,6 +31,7 @@ interface CarouselProps<Item> {
   autoPlay?: boolean;
   loop?: boolean;
   autoPlayInterval?: number;
+  inactiveScale?: number
 }
 
 // Create an animated version of FlatList to support animations
@@ -53,7 +55,8 @@ const CarouselMomentum = <Item,>(
     onMomentumScrollEnd,
     autoPlay,
     loop,
-    autoPlayInterval
+    autoPlayInterval,
+    inactiveScale
   }: CarouselProps<Item>,
   ref: ForwardedRef<FlatList<Item>>,
 ) => {
@@ -223,7 +226,7 @@ const CarouselMomentum = <Item,>(
                     calculateCenteredItemOffset(index),     // Current item
                     calculateCenteredItemOffset(index + 1), // Right item
                   ],
-                  outputRange: [0.8, 1, 0.8], // Scale items to 0.8 when off-center and 1 when centered
+                  outputRange: [inactiveScale ? inactiveScale : 0.8, 1, inactiveScale ? inactiveScale : 0.8], // Scale items to 0.8 when off-center and 1 when centered
                   extrapolate: 'clamp', // Clamp the scale to avoid values beyond the range
                 }),
               },

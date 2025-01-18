@@ -31,6 +31,7 @@ declare interface CarouselProps<Item> {
   autoPlay?: boolean; // Optional boolean to enable automatic scrolling through the carousel items
   loop?: boolean; // Optional boolean to enable looping of the carousel
   autoPlayInterval?: number; // Optional number for automatic scrolling through the carousel items
+  inactiveScale?: number; // Optional number for scale inactive items
 }
 
 /**
