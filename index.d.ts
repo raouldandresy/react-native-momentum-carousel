@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { ListRenderItem } from 'react-native';
 
-
 /**
  * CarouselProps defines the expected properties for the CarouselMomentum component.
  * These properties are used to configure the carousel, its behavior, and appearance.
@@ -34,14 +33,21 @@ declare interface CarouselProps<Item> {
   inactiveScale?: number; // Optional number for scale inactive items
 }
 
-/**
- * CarouselMomentum is a React class component that implements a carousel with snapping behavior.
- * It supports scrolling through the items, animated transitions, and snapping to the closest item.
- * The `autoPlay` feature can be enabled to automatically cycle through the items.
- */
-declare class CarouselMomentum extends React.Component<
-  CarouselProps<any>, // CarouselProps<any> is a generic type that accepts any type of item in the carousel
-  any // The component state (can be further specified to better handle the state)
-> {}
+interface CarouselRef<Item> {
+  getCurrentIndex: () => number; // Method to get the current index of the carousel
+  goToIndex: (index: number) => void; // Method to scroll to a specific index
+}
 
-export { CarouselMomentum }; // Export the CarouselMomentum class so it can be imported and used elsewhere in the application
+/**
+ * CarouselMomentum is a functional component that implements a carousel with snapping behavior.
+ * It uses Animated FlatList for smooth transitions and supports autoplay and looping functionality.
+ * 
+ * @param {CarouselProps<Item>} props - The properties passed to the carousel component.
+ * @param {React.Ref<CarouselRef>} ref - The forwarded ref to expose methods like `getCurrentIndex` and `goToIndex`.
+ */
+declare const CarouselMomentum: <Item>(
+  props: CarouselProps<Item>,
+  ref: React.Ref<CarouselRef<Item>>
+) => React.ReactElement | null;
+
+export default React.forwardRef(CarouselMomentum);

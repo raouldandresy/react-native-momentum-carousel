@@ -34,6 +34,11 @@ interface CarouselProps<Item> {
   inactiveScale?: number
 }
 
+interface CarouselRef<Item> {
+  getCurrentIndex: () => number; // Method to get the current index of the carousel
+  goToIndex: (index: number) => void; // Method to scroll to a specific index
+}
+
 // Create an animated version of FlatList to support animations
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
@@ -58,7 +63,7 @@ const CarouselMomentum = <Item,>(
     autoPlayInterval,
     inactiveScale
   }: CarouselProps<Item>,
-  ref: ForwardedRef<FlatList<Item>>,
+  ref: ForwardedRef<CarouselRef<Item>>,
 ) => {
   // Reference to track the horizontal scroll position for animations
   const scrollX = useRef(new Animated.Value(0)).current;
