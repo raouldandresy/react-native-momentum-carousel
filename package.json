@@ -27,5 +27,6 @@
   "bugs": {
     "url": "https://github.com/raouldandresy/react-native-momentum-carousel/issues"
   },
-  "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme"
+  "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme",
+  "packageManager": "yarn@3.6.1"
 }
