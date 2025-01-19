@@ -270,7 +270,7 @@ const CarouselMomentum = <Item,>(
         {renderItem(info)}
       </Animated.View>
     ),
-    [calculateCenteredItemOffset, itemWidth, renderItem, scrollX] // Recalculate when these values change
+    [calculateCenteredItemOffset, inactiveScale, itemWidth, renderItem, scrollX] // Recalculate when these values change
   );
 
   return (
