@@ -241,7 +241,7 @@ const CarouselMomentum = <Item,>(
    * as items approach or leave the center of the viewport.
    */
   const renderItemInternal = useCallback<ListRenderItem<Item>>(
-    ({ item, index }: { item: Item; index: number }) => (
+    (info) => (
       <Animated.View
         style={[
           styles.itemContainer,
@@ -251,9 +251,9 @@ const CarouselMomentum = <Item,>(
               {
                 scale: scrollX.interpolate({
                   inputRange: [
-                    calculateCenteredItemOffset(index - 1), // Left item
-                    calculateCenteredItemOffset(index), // Current item
-                    calculateCenteredItemOffset(index + 1), // Right item
+                    calculateCenteredItemOffset(info.index - 1), // Left item
+                    calculateCenteredItemOffset(info.index), // Current item
+                    calculateCenteredItemOffset(info.index + 1), // Right item
                   ],
                   outputRange: [
                     inactiveScale ? inactiveScale : 0.8,
@@ -267,7 +267,7 @@ const CarouselMomentum = <Item,>(
           },
         ]}
       >
-        {renderItem({ item, index })}
+        {renderItem(info)}
       </Animated.View>
     ),
     [calculateCenteredItemOffset, itemWidth, renderItem, scrollX] // Recalculate when these values change
