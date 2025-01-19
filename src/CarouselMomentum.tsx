@@ -147,7 +147,7 @@ const CarouselMomentum = <Item,>(
         onSnap(loopedIndex); // Trigger the onSnap callback to notify the parent component
       }
     },
-    [data.length, calculateItemOffsetStatic, onSnap]
+    [loop, data.length, calculateItemOffsetStatic, onSnap]
   );
 
   /**
