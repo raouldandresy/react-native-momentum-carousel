@@ -1,5 +1,19 @@
-import React, { useRef, useState, useCallback, useMemo, useImperativeHandle, ForwardedRef, useEffect } from 'react';
-import { View, FlatList, Animated, ListRenderItem, FlatListProps } from 'react-native';
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  useImperativeHandle,
+  ForwardedRef,
+  useEffect,
+} from 'react';
+import {
+  View,
+  FlatList,
+  Animated,
+  ListRenderItem,
+  FlatListProps,
+} from 'react-native';
 import { styles } from './style';
 
 /**
@@ -31,7 +45,7 @@ interface CarouselProps<Item> {
   autoPlay?: boolean;
   loop?: boolean;
   autoPlayInterval?: number;
-  inactiveScale?: number
+  inactiveScale?: number;
 }
 
 interface CarouselRef<Item> {
@@ -61,9 +75,9 @@ const CarouselMomentum = <Item,>(
     autoPlay,
     loop,
     autoPlayInterval,
-    inactiveScale
+    inactiveScale,
   }: CarouselProps<Item>,
-  ref: ForwardedRef<CarouselRef<Item>>,
+  ref: ForwardedRef<CarouselRef<Item>>
 ) => {
   // Reference to track the horizontal scroll position for animations
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -90,7 +104,7 @@ const CarouselMomentum = <Item,>(
   const handleScroll = useCallback<
     NonNullable<FlatListProps<Item>['onScroll']>
   >(
-    e => {
+    (e) => {
       const offsetX = e.nativeEvent.contentOffset.x; // Get the horizontal scroll offset
       scrollX.setValue(offsetX); // Update the scroll position for animations
       const nextIndex = Math.round(offsetX / itemWidth); // Calculate the current index
@@ -106,7 +120,7 @@ const CarouselMomentum = <Item,>(
       itemWidth, // Recalculate if itemWidth changes
       onSnap, // Dependency on onSnap callback
       scrollX, // Dependency on scrollX for animated transitions
-    ],
+    ]
   );
 
   /**
@@ -119,21 +133,23 @@ const CarouselMomentum = <Item,>(
    * goToIndex scrolls to a specific index and updates the current index state.
    * It also triggers the snap-to-item callback (`onSnap`).
    */
-  const goToIndex = useCallback((index: number) => {
-    // Calculate the index with wrapping around (modulo operation)
-    let loopedIndex = index;
-    if(loop){
-      loopedIndex = (index + data.length) % data.length;
-    }
-    // Ensure the FlatList reference is available before attempting to scroll
-    if (flatListRef.current) {
-      const offset = calculateItemOffsetStatic(loopedIndex); // Calculate the offset for the given index
-      flatListRef.current?.scrollToOffset({ animated: true, offset }); // Scroll to the desired offset
-      setCurrentIndex(loopedIndex); // Update the current index state
-      onSnap(loopedIndex); // Trigger the onSnap callback to notify the parent component
-    }
-  }, [data.length, calculateItemOffsetStatic, onSnap]);
-  
+  const goToIndex = useCallback(
+    (index: number) => {
+      // Calculate the index with wrapping around (modulo operation)
+      let loopedIndex = index;
+      if (loop) {
+        loopedIndex = (index + data.length) % data.length;
+      }
+      // Ensure the FlatList reference is available before attempting to scroll
+      if (flatListRef.current) {
+        const offset = calculateItemOffsetStatic(loopedIndex); // Calculate the offset for the given index
+        flatListRef.current?.scrollToOffset({ animated: true, offset }); // Scroll to the desired offset
+        setCurrentIndex(loopedIndex); // Update the current index state
+        onSnap(loopedIndex); // Trigger the onSnap callback to notify the parent component
+      }
+    },
+    [data.length, calculateItemOffsetStatic, onSnap]
+  );
 
   /**
    * startAutoplay starts the autoplay functionality by setting an interval to change the index every 3 seconds.
@@ -144,21 +160,24 @@ const CarouselMomentum = <Item,>(
     if (autoplayRef.current) {
       return;
     }
-    autoplayRef.current = setInterval(() => {
-      // Automatically loop to the next index and reset to 0 if at the last item
-      let nextIndex = 0;
-      if(loop){
-        nextIndex = (currentIndex + 1) % data.length;
-        goToIndex(nextIndex); 
-      } else {
-        if(currentIndex + 1 > data.length - 1){
-          stopAutoplay();
+    autoplayRef.current = setInterval(
+      () => {
+        // Automatically loop to the next index and reset to 0 if at the last item
+        let nextIndex = 0;
+        if (loop) {
+          nextIndex = (currentIndex + 1) % data.length;
+          goToIndex(nextIndex);
         } else {
-          nextIndex = (currentIndex + 1);
-          goToIndex(nextIndex); 
+          if (currentIndex + 1 > data.length - 1) {
+            stopAutoplay();
+          } else {
+            nextIndex = currentIndex + 1;
+            goToIndex(nextIndex);
+          }
         }
-      }
-    }, autoPlayInterval ? autoPlayInterval : 3000); // Advance every 3 seconds
+      },
+      autoPlayInterval ? autoPlayInterval : 3000
+    ); // Advance every 3 seconds
   }, [goToIndex, currentIndex, data.length]);
 
   /**
@@ -178,14 +197,13 @@ const CarouselMomentum = <Item,>(
       startAutoplay(); // Start autoplay if enabled
       return () => {
         // Cleanup autoplay when component unmounts or autoPlay is turned off
-        stopAutoplay()
+        stopAutoplay();
       };
     } else {
       // If autoplay is disabled, clear the interval
-      stopAutoplay()
+      stopAutoplay();
     }
   }, [autoPlay, startAutoplay]);
-  
 
   /**
    * calculateCenteredItemOffset calculates the dynamic offset to center the item within the carousel.
@@ -197,7 +215,7 @@ const CarouselMomentum = <Item,>(
       const centerOffset = (sliderWidth - itemWidth) / 2;
       return index * itemWidth - centerOffset;
     },
-    [sliderWidth, itemWidth], // Recalculate if sliderWidth or itemWidth changes
+    [sliderWidth, itemWidth] // Recalculate if sliderWidth or itemWidth changes
   );
 
   /**
@@ -205,10 +223,11 @@ const CarouselMomentum = <Item,>(
    * or falling back to the index if not provided.
    */
   const keyExtractorInternal = useCallback<
-  NonNullable<FlatListProps<Item>['keyExtractor']>
+    NonNullable<FlatListProps<Item>['keyExtractor']>
   >(
-    (item: Item, index: number) => keyExtractor ? keyExtractor(item, index) : index.toString(),
-    [keyExtractor], // Recalculate if keyExtractor changes
+    (item: Item, index: number) =>
+      keyExtractor ? keyExtractor(item, index) : index.toString(),
+    [keyExtractor] // Recalculate if keyExtractor changes
   );
 
   /**
@@ -228,10 +247,14 @@ const CarouselMomentum = <Item,>(
                 scale: scrollX.interpolate({
                   inputRange: [
                     calculateCenteredItemOffset(index - 1), // Left item
-                    calculateCenteredItemOffset(index),     // Current item
+                    calculateCenteredItemOffset(index), // Current item
                     calculateCenteredItemOffset(index + 1), // Right item
                   ],
-                  outputRange: [inactiveScale ? inactiveScale : 0.8, 1, inactiveScale ? inactiveScale : 0.8], // Scale items to 0.8 when off-center and 1 when centered
+                  outputRange: [
+                    inactiveScale ? inactiveScale : 0.8,
+                    1,
+                    inactiveScale ? inactiveScale : 0.8,
+                  ], // Scale items to 0.8 when off-center and 1 when centered
                   extrapolate: 'clamp', // Clamp the scale to avoid values beyond the range
                 }),
               },
@@ -242,11 +265,14 @@ const CarouselMomentum = <Item,>(
         {renderItem({ item, index })}
       </Animated.View>
     ),
-    [calculateCenteredItemOffset, itemWidth, renderItem, scrollX], // Recalculate when these values change
+    [calculateCenteredItemOffset, itemWidth, renderItem, scrollX] // Recalculate when these values change
   );
 
   return (
-    <View style={[styles.container, { width: sliderWidth }]} accessibilityLabel={accessibilityLabelCarousel}>
+    <View
+      style={[styles.container, { width: sliderWidth }]}
+      accessibilityLabel={accessibilityLabelCarousel}
+    >
       {/* The main AnimatedFlatList that renders the carousel */}
       <AnimatedFlatList
         ref={flatListRef} // Reference to FlatList for direct manipulation
