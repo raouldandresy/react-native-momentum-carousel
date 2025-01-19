@@ -24,7 +24,7 @@ import { styles } from './style';
  * - `keyExtractor`: Function that provides a unique key for each item, defaulting to index if not provided.
  * - `onSnap`: Callback that is triggered when an item is snapped to the center of the carousel.
  * - `accessibilityLabelCarousel`: Optional accessibility label for the carousel.
- * - `onMomentumScrollStart`: Optional Callback triggered when momentum scrolling starts.
+ * - `onMomentumScrollBegin`: Optional Callback triggered when momentum scrolling starts.
  * - `onMomentumScrollEnd`: Optional Callback triggered when momentum scrolling ends.
  * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
  * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
@@ -39,7 +39,7 @@ interface CarouselProps<Item> {
   keyExtractor?: (item: Item, index: number) => string;
   onSnap: (index: number) => void;
   accessibilityLabelCarousel?: string;
-  onMomentumScrollStart?: () => void;
+  onMomentumScrollBegin?: () => void;
   onMomentumScrollEnd?: () => void;
   autoPlay?: boolean;
   loop?: boolean;
@@ -69,7 +69,7 @@ const CarouselMomentum = <Item,>(
     keyExtractor,
     onSnap,
     accessibilityLabelCarousel,
-    onMomentumScrollStart,
+    onMomentumScrollBegin,
     onMomentumScrollEnd,
     autoPlay,
     loop,
@@ -291,7 +291,7 @@ const CarouselMomentum = <Item,>(
         onScroll={handleScroll} // Handle scroll events
         scrollEventThrottle={16} // Throttle scroll event updates for smoother performance
         onMomentumScrollEnd={onMomentumScrollEnd} // Callback triggered when momentum scroll ends
-        onMomentumScrollStart={onMomentumScrollStart} // Callback triggered when momentum scroll starts
+        onMomentumScrollBegin={onMomentumScrollBegin} // Callback triggered when momentum scroll starts
         renderItem={renderItemInternal} // Render each item with animation
         contentContainerStyle={{
           paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
