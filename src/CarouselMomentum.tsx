@@ -203,16 +203,18 @@ const CarouselMomentum = <Item,>(
   // UseEffect hook to start/stop autoplay based on the `autoPlay` prop
   useEffect(() => {
     if (autoPlay) {
-      startAutoplay(); // Start autoplay if enabled
-      return () => {
-        // Cleanup autoplay when component unmounts or autoPlay is turned off
-        stopAutoplay();
-      };
+      // Start autoplay if enabled
+      startAutoplay();
     } else {
       // If autoplay is disabled, clear the interval
       stopAutoplay();
     }
-  }, [autoPlay, startAutoplay]);
+
+    return () => {
+      // Cleanup autoplay when component unmounts or autoPlay is turned off
+      stopAutoplay();
+    };
+  }, [autoPlay, startAutoplay, stopAutoplay]);
 
   /**
    * calculateCenteredItemOffset calculates the dynamic offset to center the item within the carousel.
