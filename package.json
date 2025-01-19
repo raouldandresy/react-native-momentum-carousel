@@ -28,5 +28,8 @@
     "url": "https://github.com/raouldandresy/react-native-momentum-carousel/issues"
   },
   "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme",
-  "packageManager": "yarn@3.6.1"
+  "packageManager": "yarn@3.6.1",
+  "workspaces": [
+    "example"
+  ]
 }
