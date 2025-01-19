@@ -15,7 +15,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
+  Text, TextInput, TextInputProps,
   useColorScheme,
   View,
 } from 'react-native';
@@ -37,6 +37,7 @@ function App(): React.JSX.Element {
 
   const [autoplay, setAutoplay] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [autoplayInterval, setAutoplayInterval] = useState(3);
 
   const images = [
     { id: '1', source: 'https://picsum.photos/411/250/' },
@@ -52,6 +53,15 @@ function App(): React.JSX.Element {
 
   const handleToggleLoopPress = useCallback(() => {
     setLoop((current) => !current);
+  }, []);
+
+  const handleAutoplayIntervalChange = useCallback<NonNullable<TextInputProps['onChangeText']>>((value) => {
+    const possibleValue = Number(value);
+    if (Number.isNaN(possibleValue)) {
+      return;
+    }
+
+    setAutoplayInterval(possibleValue ?? 1);
   }, []);
 
   const renderItem = ({ item, index }) => {
@@ -96,6 +106,7 @@ function App(): React.JSX.Element {
             itemWidth={windowWidth * 0.8}
             autoPlay={autoplay}
             loop={loop}
+            autoPlayInterval={autoplayInterval * 1000}
             renderItem={renderItem}
             onSnap={onSnap}
             keyExtractor={(item)=> item.id}
@@ -104,7 +115,11 @@ function App(): React.JSX.Element {
         </View>
         <View style={styles.buttonsContainer}>
           <Button title={'Toggle autoplay'} onPress={handleToggleAutoplayPress} />
+          <View style={styles.separator} />
           <Button title={'Toggle loop'} onPress={handleToggleLoopPress} />
+          <View style={styles.separator} />
+          <Text>Set an autoplay interval in seconds</Text>
+          <TextInput style={styles.autoplayIntervalInput} value={String(autoplayInterval)} placeholder={'Set autoplay interval'} onChangeText={handleAutoplayIntervalChange} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -142,6 +157,15 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     marginTop: 20,
+    alignItems: 'center',
+  },
+  separator: {
+    marginBottom: 10,
+  },
+  autoplayIntervalInput: {
+    width: 200,
+    padding: 10,
+    borderBottomWidth: 1,
   },
 });
 
