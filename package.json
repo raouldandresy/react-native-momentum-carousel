@@ -86,7 +86,8 @@
       [
         "typescript",
         {
-          "esm": true
+          "esm": true,
+          "project": "tsconfig.build.json"
         }
       ]
     ]
