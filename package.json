@@ -2,7 +2,7 @@
   "name": "react-native-momentum-carousel",
   "version": "1.0.0",
   "description": "A React Native carousel component enables smooth and interactive image or content sliders with swiping capabilities. Ideal for showcasing multiple items or images in a compact space, this carousel can be customized with features like infinite scrolling, pagination, and custom animations. It supports both horizontal and vertical orientations and allows for seamless user interaction, making it an excellent tool for creating engaging mobile applications. Additionally, provides options to integrate touch gestures and configure autoplay settings.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "example": "yarn workspace react-native-momentum-carousel-example",
     "lint": "eslint \"**/*.{js,ts,tsx}\""
