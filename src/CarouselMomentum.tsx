@@ -126,7 +126,10 @@ const CarouselMomentum = <Item,>(
    * Calculates the static offset of an item based on its index.
    * This is used when we want to programmatically scroll to a specific item.
    */
-  const calculateItemOffsetStatic = (index: number) => index * itemWidth;
+  const calculateItemOffsetStatic = useCallback(
+    (index: number) => index * itemWidth,
+    [itemWidth]
+  );
 
   /**
    * goToIndex scrolls to a specific index and updates the current index state.
