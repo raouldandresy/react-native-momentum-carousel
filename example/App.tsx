@@ -5,23 +5,24 @@
  * @format
  */
 
-import React, { useRef, useState } from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {
+  Button,
   Dimensions,
-  FlatList,
   Image,
   Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
+  Text,
   useColorScheme,
   View,
 } from 'react-native';
 import { CarouselMomentum } from 'react-native-momentum-carousel';
 
 import {
-  Colors
+  Colors,
 } from 'react-native/Libraries/NewAppScreen';
 
 const windowWidth = Dimensions.get('window').width;
@@ -33,29 +34,41 @@ function App(): React.JSX.Element {
   };
 
   const [index, setIndex] = useState(0);
+
+  const [autoplay, setAutoplay] = useState(false);
+  const [loop, setLoop] = useState(false);
+
   const images = [
     { id: '1', source: 'https://picsum.photos/411/250/' },
     { id: '2', source: 'https://picsum.photos/411/250/' },
     { id: '3', source: 'https://picsum.photos/411/250/' },
     { id: '4', source: 'https://picsum.photos/411/250/' },
-    { id: '5', source: 'https://picsum.photos/411/250/' }
+    { id: '5', source: 'https://picsum.photos/411/250/' },
   ];
+
+  const handleToggleAutoplayPress = useCallback(() => {
+    setAutoplay((current) => !current);
+  }, []);
+
+  const handleToggleLoopPress = useCallback(() => {
+    setLoop((current) => !current);
+  }, []);
 
   const renderItem = ({ item, index }) => {
     return (
     <Pressable style={styles.itemContainer} onPress={() => goToIndex(index)}>
       <Image source={{ uri: item.source }} style={styles.image}/>
     </Pressable>
-    )
+    );
   };
-  const flatListRef = useRef(CarouselMomentum); 
+  const flatListRef = useRef(CarouselMomentum);
 
   const goToIndex = (index) => {
-    console.log(flatListRef?.current?.getCurrentIndex())
+    console.log(flatListRef?.current?.getCurrentIndex());
     flatListRef?.current?.goToIndex(index);
-  }
+  };
   const onSnap = (index) => {
-    setIndex(index)}
+    setIndex(index);};
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -63,6 +76,12 @@ function App(): React.JSX.Element {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
+
+      <View style={styles.header}>
+        <Text>{`Autoplay: ${autoplay ? 'true' : 'false'}`}</Text>
+        <Text>{`Looping: ${loop ? 'true' : 'false'}`}</Text>
+      </View>
+
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
@@ -70,16 +89,22 @@ function App(): React.JSX.Element {
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <CarouselMomentum 
-          ref={flatListRef}
-          data={images}
-          sliderWidth={windowWidth} 
-          itemWidth={windowWidth*0.8} 
-          renderItem={renderItem} 
-          onSnap={onSnap}
-          keyExtractor={(item)=> item.id}
-          inactiveScale={0.8}
+          <CarouselMomentum
+            ref={flatListRef}
+            data={images}
+            sliderWidth={windowWidth}
+            itemWidth={windowWidth * 0.8}
+            autoPlay={autoplay}
+            loop={loop}
+            renderItem={renderItem}
+            onSnap={onSnap}
+            keyExtractor={(item)=> item.id}
+            inactiveScale={0.8}
           />
+        </View>
+        <View style={styles.buttonsContainer}>
+          <Button title={'Toggle autoplay'} onPress={handleToggleAutoplayPress} />
+          <Button title={'Toggle loop'} onPress={handleToggleLoopPress} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -87,6 +112,10 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24,
@@ -105,13 +134,15 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   image: {
     width: windowWidth * 0.8,
     height: 250,  // Altezza delle immagini
-    flex: 1
-  }
+  },
+  buttonsContainer: {
+    marginTop: 20,
+  },
 });
 
 export default App;
