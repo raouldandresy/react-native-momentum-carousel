@@ -1,6 +1,9 @@
 name: Review PR
 run-name: ${{ github.actor }} is reviewing the PR 🚀
-on: [pull_request]
+on:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   prepare-environment:
