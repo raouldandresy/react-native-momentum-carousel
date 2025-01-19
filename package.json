@@ -3,47 +3,6 @@
   "version": "1.0.0",
   "description": "A React Native carousel component enables smooth and interactive image or content sliders with swiping capabilities. Ideal for showcasing multiple items or images in a compact space, this carousel can be customized with features like infinite scrolling, pagination, and custom animations. It supports both horizontal and vertical orientations and allows for seamless user interaction, making it an excellent tool for creating engaging mobile applications. Additionally, provides options to integrate touch gestures and configure autoplay settings.",
   "main": "./lib/commonjs/index.js",
-  "scripts": {
-    "example": "yarn workspace react-native-momentum-carousel-example",
-    "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "prepare": "bob build"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/raouldandresy/react-native-momentum-carousel.git"
-  },
-  "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
-  },
-  "keywords": [
-    "react-native",
-    "react-native-carousel",
-    "react",
-    "native",
-    "carousel"
-  ],
-  "author": "Giuseppe Corbisiero, Mirko Quaglia",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/raouldandresy/react-native-momentum-carousel/issues"
-  },
-  "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme",
-  "packageManager": "yarn@4.6.0",
-  "workspaces": [
-    "example"
-  ],
-  "devDependencies": {
-    "@react-native/eslint-config": "^0.73.1",
-    "eslint": "^8.51.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.1",
-    "prettier": "^3.0.3",
-    "react": "18.3.1",
-    "react-native": "0.76.6",
-    "react-native-builder-bob": "^0.35.2",
-    "typescript": "^5.2.2"
-  },
   "source": "./src/index.js",
   "module": "./lib/module/index.js",
   "types": "./lib/typescript/commonjs/src/index.d.ts",
@@ -65,6 +24,47 @@
     "!**/__tests__",
     "!**/__fixtures__",
     "!**/__mocks__"
+  ],
+  "scripts": {
+    "example": "yarn workspace react-native-momentum-carousel-example",
+    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "prepare": "bob build"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@react-native/eslint-config": "^0.73.1",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.0.3",
+    "react": "18.3.1",
+    "react-native": "0.76.6",
+    "react-native-builder-bob": "^0.35.2",
+    "typescript": "^5.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raouldandresy/react-native-momentum-carousel.git"
+  },
+  "keywords": [
+    "react-native",
+    "react-native-carousel",
+    "react",
+    "native",
+    "carousel"
+  ],
+  "author": "Giuseppe Corbisiero, Mirko Quaglia",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/raouldandresy/react-native-momentum-carousel/issues"
+  },
+  "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme",
+  "packageManager": "yarn@4.6.0",
+  "workspaces": [
+    "example"
   ],
   "react-native-builder-bob": {
     "source": "src",
@@ -89,9 +89,5 @@
         }
       ]
     ]
-  },
-  "eslintIgnore": [
-    "node_modules/",
-    "lib/"
-  ]
+  }
 }
