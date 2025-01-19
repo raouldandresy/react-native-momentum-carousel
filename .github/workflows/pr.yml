@@ -19,3 +19,8 @@ jobs:
       - name: Install dependencies
         run: yarn --immutable
 
+  check-linting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lint code
+        run: yarn lint
