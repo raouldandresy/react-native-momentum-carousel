@@ -5,6 +5,7 @@ import React, {
   useImperativeHandle,
   ForwardedRef,
   useEffect,
+  useMemo,
 } from 'react';
 import {
   View,
@@ -32,7 +33,7 @@ import { styles } from './style';
  * - `inactiveScale`: Optional number for scale inactive items
  */
 interface CarouselProps<Item> {
-  data: Item[];
+  data: Animated.WithAnimatedValue<Item>[];
   sliderWidth: number;
   itemWidth: number;
   renderItem: ListRenderItem<Item>;
@@ -47,13 +48,10 @@ interface CarouselProps<Item> {
   inactiveScale?: number;
 }
 
-interface CarouselRef<Item> {
+interface CarouselRef {
   getCurrentIndex: () => number; // Method to get the current index of the carousel
   goToIndex: (index: number) => void; // Method to scroll to a specific index
 }
-
-// Create an animated version of FlatList to support animations
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 /**
  * CarouselMomentum component renders a horizontal scrollable carousel.
@@ -76,8 +74,17 @@ const CarouselMomentum = <Item,>(
     autoPlayInterval,
     inactiveScale,
   }: CarouselProps<Item>,
-  ref: ForwardedRef<CarouselRef<Item>>
+  ref: ForwardedRef<CarouselRef>
 ) => {
+  // Create an animated version of FlatList to support animations
+  const AnimatedFlatList = useMemo(
+    () =>
+      Animated.createAnimatedComponent(FlatList) as Animated.AnimatedComponent<
+        typeof FlatList<Item>
+      >,
+    []
+  );
+
   // Reference to track the horizontal scroll position for animations
   const scrollX = useRef(new Animated.Value(0)).current;
 
