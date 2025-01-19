@@ -113,13 +113,7 @@ const CarouselMomentum = <Item,>(
         onSnap(nextIndex);
       }
     },
-    [
-      currentIndex, // Dependency to ensure the effect updates when currentIndex changes
-      data?.length, // Ensure this recalculates when data length changes
-      itemWidth, // Recalculate if itemWidth changes
-      onSnap, // Dependency on onSnap callback
-      scrollX, // Dependency on scrollX for animated transitions
-    ]
+    [currentIndex, itemWidth, onSnap, scrollX]
   );
 
   /**
