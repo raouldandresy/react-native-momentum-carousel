@@ -154,6 +154,17 @@ const CarouselMomentum = <Item,>(
   );
 
   /**
+   * stopAutoplay stops the autoplay functionality by clearing the interval.
+   */
+  const stopAutoplay = useCallback(() => {
+    // Stop the autoplay cycle if it is running
+    if (autoplayRef.current) {
+      clearInterval(autoplayRef.current);
+      autoplayRef.current = null;
+    }
+  }, []);
+
+  /**
    * startAutoplay starts the autoplay functionality by setting an interval to change the index every 3 seconds.
    * It only starts if autoplay is not already running.
    */
@@ -180,18 +191,14 @@ const CarouselMomentum = <Item,>(
       },
       autoPlayInterval ? autoPlayInterval : 3000
     ); // Advance every 3 seconds
-  }, [goToIndex, currentIndex, data.length]);
-
-  /**
-   * stopAutoplay stops the autoplay functionality by clearing the interval.
-   */
-  const stopAutoplay = useCallback(() => {
-    // Stop the autoplay cycle if it is running
-    if (autoplayRef.current) {
-      clearInterval(autoplayRef.current);
-      autoplayRef.current = null;
-    }
-  }, []);
+  }, [
+    autoPlayInterval,
+    loop,
+    currentIndex,
+    data.length,
+    goToIndex,
+    stopAutoplay,
+  ]);
 
   // UseEffect hook to start/stop autoplay based on the `autoPlay` prop
   useEffect(() => {
