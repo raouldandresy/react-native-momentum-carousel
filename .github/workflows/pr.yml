@@ -1,12 +1,14 @@
 name: Review PR
 run-name: ${{ github.actor }} is reviewing the PR 🚀
 on:
-  pull_request:
+  pull_request_review:
     branches:
       - main
+    types: [submitted]
 
 jobs:
   check-linting:
+    if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,6 +21,7 @@ jobs:
         run: yarn lint
 
   check-tsc:
+    if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
