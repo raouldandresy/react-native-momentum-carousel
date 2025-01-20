@@ -4,14 +4,13 @@
   "description": "A React Native carousel component enables smooth and interactive image or content sliders with swiping capabilities. Ideal for showcasing multiple items or images in a compact space, this carousel can be customized with features like infinite scrolling, pagination, and custom animations. It supports both horizontal and vertical orientations and allows for seamless user interaction, making it an excellent tool for creating engaging mobile applications. Additionally, provides options to integrate touch gestures and configure autoplay settings.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "example": "yarn workspace react-native-momentum-carousel-example"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/raouldandresy/react-native-momentum-carousel.git"
   },
   "peerDependencies": {
-    "prop-types": "*",
     "react": "*",
     "react-native": "*"
   },
@@ -27,5 +26,13 @@
   "bugs": {
     "url": "https://github.com/raouldandresy/react-native-momentum-carousel/issues"
   },
-  "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme"
+  "homepage": "https://github.com/raouldandresy/react-native-momentum-carousel#readme",
+  "packageManager": "yarn@4.6.0",
+  "workspaces": [
+    "example"
+  ],
+  "devDependencies": {
+    "react": "18.3.1",
+    "react-native": "0.76.6"
+  }
 }
