@@ -2,10 +2,10 @@ import React, {
   useRef,
   useState,
   useCallback,
-  useMemo,
   useImperativeHandle,
   ForwardedRef,
   useEffect,
+  useMemo,
 } from 'react';
 import {
   View,
@@ -25,7 +25,7 @@ import { styles } from './style';
  * - `keyExtractor`: Function that provides a unique key for each item, defaulting to index if not provided.
  * - `onSnap`: Callback that is triggered when an item is snapped to the center of the carousel.
  * - `accessibilityLabelCarousel`: Optional accessibility label for the carousel.
- * - `onMomentumScrollStart`: Optional Callback triggered when momentum scrolling starts.
+ * - `onMomentumScrollBegin`: Optional Callback triggered when momentum scrolling starts.
  * - `onMomentumScrollEnd`: Optional Callback triggered when momentum scrolling ends.
  * - `autoPlay`: Optional boolean to enable automatic scrolling through the carousel.
  * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
@@ -33,14 +33,14 @@ import { styles } from './style';
  * - `inactiveScale`: Optional number for scale inactive items
  */
 interface CarouselProps<Item> {
-  data: Item[];
+  data: Animated.WithAnimatedValue<Item>[];
   sliderWidth: number;
   itemWidth: number;
   renderItem: ListRenderItem<Item>;
   keyExtractor?: (item: Item, index: number) => string;
   onSnap: (index: number) => void;
   accessibilityLabelCarousel?: string;
-  onMomentumScrollStart?: () => void;
+  onMomentumScrollBegin?: () => void;
   onMomentumScrollEnd?: () => void;
   autoPlay?: boolean;
   loop?: boolean;
@@ -48,13 +48,10 @@ interface CarouselProps<Item> {
   inactiveScale?: number;
 }
 
-interface CarouselRef<Item> {
+interface CarouselRef {
   getCurrentIndex: () => number; // Method to get the current index of the carousel
   goToIndex: (index: number) => void; // Method to scroll to a specific index
 }
-
-// Create an animated version of FlatList to support animations
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 /**
  * CarouselMomentum component renders a horizontal scrollable carousel.
@@ -70,15 +67,24 @@ const CarouselMomentum = <Item,>(
     keyExtractor,
     onSnap,
     accessibilityLabelCarousel,
-    onMomentumScrollStart,
+    onMomentumScrollBegin,
     onMomentumScrollEnd,
     autoPlay,
     loop,
     autoPlayInterval,
     inactiveScale,
   }: CarouselProps<Item>,
-  ref: ForwardedRef<CarouselRef<Item>>
+  ref: ForwardedRef<CarouselRef>
 ) => {
+  // Create an animated version of FlatList to support animations
+  const AnimatedFlatList = useMemo(
+    () =>
+      Animated.createAnimatedComponent(FlatList) as Animated.AnimatedComponent<
+        typeof FlatList<Item>
+      >,
+    []
+  );
+
   // Reference to track the horizontal scroll position for animations
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -114,20 +120,17 @@ const CarouselMomentum = <Item,>(
         onSnap(nextIndex);
       }
     },
-    [
-      currentIndex, // Dependency to ensure the effect updates when currentIndex changes
-      data?.length, // Ensure this recalculates when data length changes
-      itemWidth, // Recalculate if itemWidth changes
-      onSnap, // Dependency on onSnap callback
-      scrollX, // Dependency on scrollX for animated transitions
-    ]
+    [currentIndex, itemWidth, onSnap, scrollX]
   );
 
   /**
    * Calculates the static offset of an item based on its index.
    * This is used when we want to programmatically scroll to a specific item.
    */
-  const calculateItemOffsetStatic = (index: number) => index * itemWidth;
+  const calculateItemOffsetStatic = useCallback(
+    (index: number) => index * itemWidth,
+    [itemWidth]
+  );
 
   /**
    * goToIndex scrolls to a specific index and updates the current index state.
@@ -148,8 +151,19 @@ const CarouselMomentum = <Item,>(
         onSnap(loopedIndex); // Trigger the onSnap callback to notify the parent component
       }
     },
-    [data.length, calculateItemOffsetStatic, onSnap]
+    [loop, data.length, calculateItemOffsetStatic, onSnap]
   );
+
+  /**
+   * stopAutoplay stops the autoplay functionality by clearing the interval.
+   */
+  const stopAutoplay = useCallback(() => {
+    // Stop the autoplay cycle if it is running
+    if (autoplayRef.current) {
+      clearInterval(autoplayRef.current);
+      autoplayRef.current = null;
+    }
+  }, []);
 
   /**
    * startAutoplay starts the autoplay functionality by setting an interval to change the index every 3 seconds.
@@ -178,32 +192,30 @@ const CarouselMomentum = <Item,>(
       },
       autoPlayInterval ? autoPlayInterval : 3000
     ); // Advance every 3 seconds
-  }, [goToIndex, currentIndex, data.length]);
-
-  /**
-   * stopAutoplay stops the autoplay functionality by clearing the interval.
-   */
-  const stopAutoplay = useCallback(() => {
-    // Stop the autoplay cycle if it is running
-    if (autoplayRef.current) {
-      clearInterval(autoplayRef.current);
-      autoplayRef.current = null;
-    }
-  }, []);
+  }, [
+    autoPlayInterval,
+    loop,
+    currentIndex,
+    data.length,
+    goToIndex,
+    stopAutoplay,
+  ]);
 
   // UseEffect hook to start/stop autoplay based on the `autoPlay` prop
   useEffect(() => {
     if (autoPlay) {
-      startAutoplay(); // Start autoplay if enabled
-      return () => {
-        // Cleanup autoplay when component unmounts or autoPlay is turned off
-        stopAutoplay();
-      };
+      // Start autoplay if enabled
+      startAutoplay();
     } else {
       // If autoplay is disabled, clear the interval
       stopAutoplay();
     }
-  }, [autoPlay, startAutoplay]);
+
+    return () => {
+      // Cleanup autoplay when component unmounts or autoPlay is turned off
+      stopAutoplay();
+    };
+  }, [autoPlay, startAutoplay, stopAutoplay]);
 
   /**
    * calculateCenteredItemOffset calculates the dynamic offset to center the item within the carousel.
@@ -236,7 +248,7 @@ const CarouselMomentum = <Item,>(
    * as items approach or leave the center of the viewport.
    */
   const renderItemInternal = useCallback<ListRenderItem<Item>>(
-    ({ item, index }: { item: Item; index: number }) => (
+    (info) => (
       <Animated.View
         style={[
           styles.itemContainer,
@@ -246,9 +258,9 @@ const CarouselMomentum = <Item,>(
               {
                 scale: scrollX.interpolate({
                   inputRange: [
-                    calculateCenteredItemOffset(index - 1), // Left item
-                    calculateCenteredItemOffset(index), // Current item
-                    calculateCenteredItemOffset(index + 1), // Right item
+                    calculateCenteredItemOffset(info.index - 1), // Left item
+                    calculateCenteredItemOffset(info.index), // Current item
+                    calculateCenteredItemOffset(info.index + 1), // Right item
                   ],
                   outputRange: [
                     inactiveScale ? inactiveScale : 0.8,
@@ -262,10 +274,10 @@ const CarouselMomentum = <Item,>(
           },
         ]}
       >
-        {renderItem({ item, index })}
+        {renderItem(info)}
       </Animated.View>
     ),
-    [calculateCenteredItemOffset, itemWidth, renderItem, scrollX] // Recalculate when these values change
+    [calculateCenteredItemOffset, inactiveScale, itemWidth, renderItem, scrollX] // Recalculate when these values change
   );
 
   return (
@@ -286,7 +298,7 @@ const CarouselMomentum = <Item,>(
         onScroll={handleScroll} // Handle scroll events
         scrollEventThrottle={16} // Throttle scroll event updates for smoother performance
         onMomentumScrollEnd={onMomentumScrollEnd} // Callback triggered when momentum scroll ends
-        onMomentumScrollStart={onMomentumScrollStart} // Callback triggered when momentum scroll starts
+        onMomentumScrollBegin={onMomentumScrollBegin} // Callback triggered when momentum scroll starts
         renderItem={renderItemInternal} // Render each item with animation
         contentContainerStyle={{
           paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
