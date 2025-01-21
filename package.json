@@ -31,10 +31,6 @@
     "check": "tsc --noEmit",
     "prepare": "bob build"
   },
-  "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
-  },
   "devDependencies": {
     "@react-native/eslint-config": "^0.73.1",
     "@types/react": "^18.2.6",
@@ -46,6 +42,10 @@
     "react-native": "0.76.6",
     "react-native-builder-bob": "^0.35.2",
     "typescript": "^5.2.2"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
   },
   "repository": {
     "type": "git",
