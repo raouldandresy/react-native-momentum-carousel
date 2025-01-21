@@ -1,2 +1,3 @@
-import CarouselMomentum from './CarouselMomentum';
-export { CarouselMomentum };
+import CarouselMomentum, { CarouselRef } from './CarouselMomentum';
+
+export { CarouselMomentum, CarouselRef };

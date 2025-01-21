@@ -48,7 +48,7 @@ interface CarouselProps<Item> {
   inactiveScale?: number;
 }
 
-interface CarouselRef {
+export interface CarouselRef {
   getCurrentIndex: () => number; // Method to get the current index of the carousel
   goToIndex: (index: number) => void; // Method to scroll to a specific index
 }
