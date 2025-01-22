@@ -6,6 +6,8 @@ import React, {
   ForwardedRef,
   useEffect,
   useMemo,
+  PropsWithoutRef,
+  RefAttributes,
 } from 'react';
 import {
   View,
@@ -314,4 +316,8 @@ const WithForwardedRef = React.forwardRef(CarouselMomentum);
 // Wrap the component with React.memo for performance optimization (prevents unnecessary re-renders)
 const Memoized = React.memo(WithForwardedRef);
 
-export default Memoized; // Export the memoized component
+export default Memoized as GenericForwardRefExoticComponent; // Export the memoized component
+
+type GenericForwardRefExoticComponent = <Item>(
+  props: PropsWithoutRef<CarouselProps<Item>> & RefAttributes<CarouselRef>
+) => React.ReactNode;
