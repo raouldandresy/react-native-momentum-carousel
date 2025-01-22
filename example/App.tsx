@@ -69,22 +69,25 @@ function App(): React.JSX.Element {
     setAutoplayInterval(possibleValue ?? 1);
   }, []);
 
-  const goToIndex = (index: number) => {
+  const goToIndex = (_index: number) => {
     console.log(flatListRef?.current?.getCurrentIndex());
-    flatListRef?.current?.goToIndex(index);
+    flatListRef?.current?.goToIndex(_index);
   };
 
-  const onSnap = (index: number) => {
-    setIndex(index);
+  const onSnap = (_index: number) => {
+    setIndex(_index);
   };
 
   const keyExtractor = (item: (typeof images)[number]) => {
     return item.id;
   };
 
-  const renderItem = ({ item, index }: ListRenderItemInfo<typeof images[number]>) => {
+  const renderItem = ({
+    item,
+    index: _index,
+  }: ListRenderItemInfo<(typeof images)[number]>) => {
     return (
-      <Pressable style={styles.itemContainer} onPress={() => goToIndex(index)}>
+      <Pressable style={styles.itemContainer} onPress={() => goToIndex(_index)}>
         <Image source={{ uri: item.source }} style={styles.image} />
       </Pressable>
     );
