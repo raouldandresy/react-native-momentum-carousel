@@ -1,2 +1,4 @@
 import CarouselMomentum from './CarouselMomentum';
-export { CarouselMomentum };
+import Pagination from './Pagination';
+
+export { CarouselMomentum, Pagination };

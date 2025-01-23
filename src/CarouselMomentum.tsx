@@ -13,8 +13,11 @@ import {
   Animated,
   ListRenderItem,
   FlatListProps,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { styles } from './style';
+import Pagination from './Pagination';
 
 /**
  * CarouselProps defines the expected properties for the CarouselMomentum component.
@@ -31,6 +34,8 @@ import { styles } from './style';
  * - `loop`: Optional boolean to loop the carousel back to the start after reaching the last item.
  * - `autoPlayInterval`: Optional number for automatic scrolling through the carousel.
  * - `inactiveScale`: Optional number for scale inactive items
+ * - `showPagination`: Optional boolean to show pagination component.
+ * - `paginationStyle`: Optional style for pagination component {container:{},bullet:{},activeBullet:{}}.
  */
 interface CarouselProps<Item> {
   data: Animated.WithAnimatedValue<Item>[];
@@ -46,6 +51,12 @@ interface CarouselProps<Item> {
   loop?: boolean;
   autoPlayInterval?: number;
   inactiveScale?: number;
+  showPagination?: boolean;
+  paginationStyle?: {
+    container?: StyleProp<ViewStyle>;
+    bullet?: StyleProp<ViewStyle>;
+    activeBullet?: StyleProp<ViewStyle>;
+  };
 }
 
 interface CarouselRef {
@@ -73,6 +84,8 @@ const CarouselMomentum = <Item,>(
     loop,
     autoPlayInterval,
     inactiveScale,
+    showPagination,
+    paginationStyle,
   }: CarouselProps<Item>,
   ref: ForwardedRef<CarouselRef>
 ) => {
@@ -304,6 +317,13 @@ const CarouselMomentum = <Item,>(
           paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
         }}
       />
+      {showPagination && (
+        <Pagination
+          dataLength={data.length}
+          currentIndex={currentIndex}
+          paginationStyle={paginationStyle}
+        />
+      )}
     </View>
   );
 };

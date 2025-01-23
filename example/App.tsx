@@ -33,7 +33,7 @@ function App(): React.JSX.Element {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const [autoplay, setAutoplay] = useState(false);
   const [loop, setLoop] = useState(false);
@@ -73,12 +73,13 @@ function App(): React.JSX.Element {
   };
   const flatListRef = useRef(CarouselMomentum);
 
-  const goToIndex = (index) => {
+  const goToIndex = (index: number) => {
     console.log(flatListRef?.current?.getCurrentIndex());
     flatListRef?.current?.goToIndex(index);
   };
-  const onSnap = (index) => {
-    setIndex(index);};
+  const onSnap = (index: number) => {
+    setCurrentIndex(index);
+  };
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -111,6 +112,8 @@ function App(): React.JSX.Element {
             onSnap={onSnap}
             keyExtractor={(item)=> item.id}
             inactiveScale={0.8}
+            showPagination
+            paginationStyle={{activeBullet:{}, bullet:{}, container:{}}}
           />
         </View>
         <View style={styles.buttonsContainer}>
