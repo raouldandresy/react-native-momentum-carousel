@@ -178,6 +178,13 @@ export const styles = StyleSheet.create({
 });
 ```
 
+## 🖼️ Demo
+
+Here’s a quick demo of how the component works:
+
+![Demo GIF](https://github.com/raouldandresy/gif/blob/main/react-native-carousel-momentum.gif)
+
+
 ## Notes
 
 - The `CarouselMomentum` component uses `Animated.FlatList` internally to provide smooth scroll animations.
