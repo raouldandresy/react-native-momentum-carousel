@@ -5,7 +5,7 @@
  * @format
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Dimensions,
@@ -21,6 +21,8 @@ import {
   useColorScheme,
   ListRenderItemInfo,
   View,
+  ListRenderItem,
+  AccessibilityInfo,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 
@@ -38,17 +40,36 @@ function App(): React.JSX.Element {
   const [loop, setLoop] = useState(false);
   const [autoplayInterval, setAutoplayInterval] = useState(3);
 
-  const images = [
-    { id: '1', source: 'https://picsum.photos/411/250/' },
-    { id: '2', source: 'https://picsum.photos/411/250/' },
-    { id: '3', source: 'https://picsum.photos/411/250/' },
-    { id: '4', source: 'https://picsum.photos/411/250/' },
-    { id: '5', source: 'https://picsum.photos/411/250/' },
-  ];
+  const images = useMemo(
+    () => [
+      { id: '1', source: 'https://picsum.photos/411/250/' },
+      { id: '2', source: 'https://picsum.photos/411/250/' },
+      { id: '3', source: 'https://picsum.photos/411/250/' },
+      { id: '4', source: 'https://picsum.photos/411/250/' },
+      { id: '5', source: 'https://picsum.photos/411/250/' },
+    ],
+    []
+  );
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  const accessibilityData = useMemo(() => {
+    return [
+      { name: 'John', surname: 'Doe', age: 30 },
+      { name: 'Jane', surname: 'Smith', age: 25 },
+      { name: 'Michael', surname: 'Johnson', age: 28 },
+      { name: 'Emily', surname: 'Johnson', age: 28 },
+      { name: 'David', surname: 'Williams', age: 32 },
+      { name: 'Sarah', surname: 'Brown', age: 27 },
+      { name: 'James', surname: 'Jones', age: 35 },
+      { name: 'Maria', surname: 'Garcia', age: 29 },
+    ];
+  }, []);
+
+  const backgroundStyle = useMemo(
+    () => ({
+      backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    }),
+    [isDarkMode]
+  );
 
   const handleToggleAutoplayPress = useCallback(() => {
     setAutoplay((current) => !current);
@@ -69,46 +90,81 @@ function App(): React.JSX.Element {
     setAutoplayInterval(possibleValue ?? 1);
   }, []);
 
-  const goToIndex = (_index: number) => {
+  const goToIndex = useCallback((_index: number) => {
     console.log(flatListRef?.current?.getCurrentIndex());
     flatListRef?.current?.goToIndex(_index);
-  };
-    
-  const onSnap = (index: number) => {
+  }, []);
+
+  const onSnap = useCallback((index: number) => {
     setCurrentIndex(index);
-  };
+  }, []);
 
-  const keyExtractor = (item: (typeof images)[number]) => {
+  const keyExtractor = useCallback((item: (typeof images)[number]) => {
     return item.id;
-  };
+  }, []);
 
-  const renderItem = ({
-    item,
-    index: _index,
-  }: ListRenderItemInfo<(typeof images)[number]>) => {
+  const handleAccessibilityItemSnap = useCallback((index: number) => {
+    setTimeout(() => {
+      AccessibilityInfo.announceForAccessibility(`Item ${index} snapped`);
+    }, 1000);
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item, index: _index }: ListRenderItemInfo<(typeof images)[number]>) => {
+      return (
+        <Pressable
+          style={styles.itemContainer}
+          onPress={() => goToIndex(_index)}
+        >
+          <Image source={{ uri: item.source }} style={styles.image} />
+        </Pressable>
+      );
+    },
+    [goToIndex]
+  );
+
+  const renderAccessibilityItem = useCallback<
+    ListRenderItem<(typeof accessibilityData)[number]>
+  >(({ item }) => {
     return (
-      <Pressable style={styles.itemContainer} onPress={() => goToIndex(_index)}>
-        <Image source={{ uri: item.source }} style={styles.image} />
-      </Pressable>
+      <View accessible style={styles.accessibilityItemContainer}>
+        <View>
+          <Text
+            accessible={false}
+            accessibilityLabel={`My name is ${item.name}`}
+          >
+            {item.name}
+          </Text>
+          <Text
+            accessible={false}
+            accessibilityLabel={`My surname is ${item.surname}`}
+          >
+            {item.surname}
+          </Text>
+          <Text accessible={false} accessibilityLabel={`My age is ${item.age}`}>
+            {item.age}
+          </Text>
+        </View>
+      </View>
     );
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
+    <SafeAreaView style={styles.container}>
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
 
       <View style={styles.header}>
-        <Text>{`Current index: ${index}`}</Text>
+        <Text>{`Current index: ${currentIndex}`}</Text>
         <Text>{`Autoplay: ${autoplay ? 'true' : 'false'}`}</Text>
         <Text>{`Looping: ${loop ? 'true' : 'false'}`}</Text>
       </View>
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}
+        contentContainerStyle={styles.contentContainer}
       >
         <View
           style={{
@@ -119,7 +175,7 @@ function App(): React.JSX.Element {
             ref={flatListRef}
             data={images}
             sliderWidth={windowWidth}
-            itemWidth={windowWidth * 0.8}
+            itemWidth={windowWidth}
             autoPlay={autoplay}
             loop={loop}
             autoPlayInterval={autoplayInterval * 1000}
@@ -128,7 +184,7 @@ function App(): React.JSX.Element {
             keyExtractor={keyExtractor}
             inactiveScale={0.8}
             showPagination
-            paginationStyle={{activeBullet:{}, bullet:{}, container:{}}}
+            paginationStyle={{ activeBullet: {}, bullet: {}, container: {} }}
           />
         </View>
         <View style={styles.buttonsContainer}>
@@ -145,6 +201,20 @@ function App(): React.JSX.Element {
             value={String(autoplayInterval)}
             placeholder={'Set autoplay interval'}
             onChangeText={handleAutoplayIntervalChange}
+          />
+        </View>
+
+        <View style={styles.accessibilityContainer}>
+          <View style={styles.accessibilityTitle}>
+            <Text>Accessible Carousel</Text>
+          </View>
+
+          <CarouselMomentum
+            data={accessibilityData}
+            sliderWidth={windowWidth}
+            itemWidth={windowWidth}
+            renderItem={renderAccessibilityItem}
+            onSnap={handleAccessibilityItemSnap}
           />
         </View>
       </ScrollView>
@@ -182,7 +252,7 @@ const styles = StyleSheet.create({
     height: 250, // Altezza delle immagini
   },
   buttonsContainer: {
-    marginTop: 20,
+    marginVertical: 20,
     alignItems: 'center',
   },
   separator: {
@@ -192,6 +262,20 @@ const styles = StyleSheet.create({
     width: 200,
     padding: 10,
     borderBottomWidth: 1,
+  },
+  accessibilityContainer: {},
+  accessibilityTitle: {
+    alignItems: 'center',
+  },
+  accessibilityItemContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  contentContainer: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
   },
 });
 
