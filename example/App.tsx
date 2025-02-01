@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   accessibilityItemContainer: {
-    width: '80%',
     alignItems: 'center',
     padding: 20,
   },
