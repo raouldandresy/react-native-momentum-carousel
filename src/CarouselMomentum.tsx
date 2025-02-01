@@ -39,7 +39,7 @@ import Pagination from './Pagination';
  * - `showPagination`: Optional boolean to show pagination component.
  * - `paginationStyle`: Optional style for pagination component {container:{},bullet:{},activeBullet:{}}.
  */
-interface CarouselProps<Item> {
+interface CarouselProps<Item> extends Pick<FlatListProps<Item>, 'onEndReached'|'onEndReachedThreshold'|'onContentSizeChange'|'onLayout'|'onRefresh'|'onViewableItemsChanged'>{
   data: Animated.WithAnimatedValue<Item>[];
   sliderWidth: number;
   itemWidth: number;
@@ -88,6 +88,7 @@ const CarouselMomentum = <Item,>(
     inactiveScale,
     showPagination,
     paginationStyle,
+    ...otherProps
   }: CarouselProps<Item>,
   ref: ForwardedRef<CarouselRef>
 ) => {
@@ -318,6 +319,7 @@ const CarouselMomentum = <Item,>(
         contentContainerStyle={{
           paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
         }}
+        {...otherProps}
       />
       {showPagination && (
         <Pagination
