@@ -8,6 +8,8 @@ import React, {
   useMemo,
   PropsWithoutRef,
   RefAttributes,
+  Component,
+  ComponentClass,
 } from 'react';
 import {
   View,
@@ -17,6 +19,8 @@ import {
   FlatListProps,
   StyleProp,
   ViewStyle,
+  findNodeHandle,
+  AccessibilityInfo,
 } from 'react-native';
 import { styles } from './style';
 import Pagination from './Pagination';
@@ -107,7 +111,7 @@ const CarouselMomentum = <Item,>(
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Reference to the FlatList component for manual scroll control
-  const flatListRef = useRef<FlatList<Item>>(null);
+  const flatListRef = useRef<FlatList<Item> | null>(null);
 
   // Reference for managing autoplay intervals
   const autoplayRef = useRef<NodeJS.Timeout | null>(null);
@@ -245,6 +249,24 @@ const CarouselMomentum = <Item,>(
     [sliderWidth, itemWidth] // Recalculate if sliderWidth or itemWidth changes
   );
 
+  const getHandleItemInternalRef = useCallback(
+    (index: number) => {
+      return (_ref: View | Animated.LegacyRef<View> | null) => {
+        if (index !== currentIndex || _ref === null) {
+          return;
+        }
+
+        const castedRef = _ref as FindNodeHandleParam;
+        const reactTag = findNodeHandle(castedRef);
+        if (!reactTag) {
+          return;
+        }
+        AccessibilityInfo.setAccessibilityFocus(reactTag);
+      };
+    },
+    [currentIndex]
+  );
+
   /**
    * keyExtractorInternal extracts a unique key for each item, either using the provided `keyExtractor`
    * or falling back to the index if not provided.
@@ -265,6 +287,7 @@ const CarouselMomentum = <Item,>(
   const renderItemInternal = useCallback<ListRenderItem<Item>>(
     (info) => (
       <Animated.View
+        ref={getHandleItemInternalRef(info.index)}
         style={[
           styles.itemContainer,
           {
@@ -292,7 +315,14 @@ const CarouselMomentum = <Item,>(
         {renderItem(info)}
       </Animated.View>
     ),
-    [calculateCenteredItemOffset, inactiveScale, itemWidth, renderItem, scrollX] // Recalculate when these values change
+    [
+      calculateCenteredItemOffset,
+      getHandleItemInternalRef,
+      inactiveScale,
+      itemWidth,
+      renderItem,
+      scrollX,
+    ] // Recalculate when these values change
   );
 
   return (
@@ -341,3 +371,9 @@ export default Memoized as GenericForwardRefExoticComponent; // Export the memoi
 type GenericForwardRefExoticComponent = <Item>(
   props: PropsWithoutRef<CarouselProps<Item>> & RefAttributes<CarouselRef>
 ) => React.ReactNode;
+
+type FindNodeHandleParam =
+  | number
+  | ComponentClass<any, any>
+  | Component<any, any, any>
+  | null;
