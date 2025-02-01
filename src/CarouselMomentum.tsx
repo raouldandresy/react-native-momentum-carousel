@@ -22,7 +22,6 @@ import {
   findNodeHandle,
   AccessibilityInfo,
 } from 'react-native';
-import { styles } from './style';
 import Pagination from './Pagination';
 
 /**
@@ -44,6 +43,8 @@ import Pagination from './Pagination';
  * - `paginationStyle`: Optional style for pagination component {container:{},bullet:{},activeBullet:{}}.
  */
 interface CarouselProps<Item> {
+  carouselStyle?: StyleProp<ViewStyle>;
+  itemStyle?: StyleProp<ViewStyle>;
   data: Animated.WithAnimatedValue<Item>[];
   sliderWidth: number;
   itemWidth: number;
@@ -77,6 +78,8 @@ export interface CarouselRef {
  */
 const CarouselMomentum = <Item,>(
   {
+    carouselStyle,
+    itemStyle,
     data,
     sliderWidth,
     itemWidth,
@@ -289,7 +292,6 @@ const CarouselMomentum = <Item,>(
       <Animated.View
         ref={getHandleItemInternalRef(info.index)}
         style={[
-          styles.itemContainer,
           {
             width: itemWidth,
             transform: [
@@ -310,6 +312,7 @@ const CarouselMomentum = <Item,>(
               },
             ],
           },
+          itemStyle,
         ]}
       >
         {renderItem(info)}
@@ -319,6 +322,7 @@ const CarouselMomentum = <Item,>(
       calculateCenteredItemOffset,
       getHandleItemInternalRef,
       inactiveScale,
+      itemStyle,
       itemWidth,
       renderItem,
       scrollX,
@@ -327,7 +331,7 @@ const CarouselMomentum = <Item,>(
 
   return (
     <View
-      style={[styles.container, { width: sliderWidth }]}
+      style={[{ width: sliderWidth }, carouselStyle]}
       accessibilityLabel={accessibilityLabelCarousel}
     >
       {/* The main AnimatedFlatList that renders the carousel */}
