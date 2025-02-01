@@ -33,7 +33,7 @@ function App(): React.JSX.Element {
 
   const isDarkMode = useColorScheme() === 'dark';
 
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const [loop, setLoop] = useState(false);
   const [autoplayInterval, setAutoplayInterval] = useState(3);
@@ -73,9 +73,9 @@ function App(): React.JSX.Element {
     console.log(flatListRef?.current?.getCurrentIndex());
     flatListRef?.current?.goToIndex(_index);
   };
-
-  const onSnap = (_index: number) => {
-    setIndex(_index);
+    
+  const onSnap = (index: number) => {
+    setCurrentIndex(index);
   };
 
   const keyExtractor = (item: (typeof images)[number]) => {
@@ -127,6 +127,8 @@ function App(): React.JSX.Element {
             onSnap={onSnap}
             keyExtractor={keyExtractor}
             inactiveScale={0.8}
+            showPagination
+            paginationStyle={{activeBullet:{}, bullet:{}, container:{}}}
           />
         </View>
         <View style={styles.buttonsContainer}>
