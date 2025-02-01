@@ -337,6 +337,7 @@ const CarouselMomentum = <Item,>(
     >
       {/* The main AnimatedFlatList that renders the carousel */}
       <AnimatedFlatList
+       {...otherProps}
         ref={flatListRef} // Reference to FlatList for direct manipulation
         data={data} // The data to display in the carousel
         keyExtractor={keyExtractor ?? keyExtractorInternal} // Use the provided or internal keyExtractor
@@ -353,7 +354,6 @@ const CarouselMomentum = <Item,>(
         contentContainerStyle={{
           paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
         }}
-        {...otherProps}
       />
       {showPagination && (
         <Pagination
