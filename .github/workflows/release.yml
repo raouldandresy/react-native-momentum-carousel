@@ -1,0 +1,73 @@
+# This template is from the https://github.com/gladiuscode/github-actions-playground repository.
+
+name: Release 🚀
+
+on: workflow_dispatch
+
+jobs:
+  check-linting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Lint code
+        run: yarn lint
+
+  check-tsc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Check tsc
+        run: yarn check
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [check-linting, check-tsc]
+
+    steps:
+      # (1) Create a GitHub App token
+      # Note: the Github App must be installed on the repository and included in the bypass list of the ruleset.
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # (2) Use the GitHub App token to init the repository
+          token: ${{ steps.app-token.outputs.token }}
+          # (3) Fetch all history so that release-it can determine the appropriate version
+          fetch-depth: 0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      # (4) Configure Git user
+      - name: Configure Git User
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      - name: Prepare
+        run: yarn prepare
+
+      - name: Release
+        run: yarn release
+        env:
+          # (5) Make GITHUB_TOKEN available to release-it but use the GitHub App token
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          # (6) Make NPM_ACCESS_TOKEN available to release-it and npm publish command
+          NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+
