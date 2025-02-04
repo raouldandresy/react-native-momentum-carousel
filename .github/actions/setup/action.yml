@@ -1,0 +1,17 @@
+name: Setup
+description: Setup Node.js and install dependencies
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+    - name: Enable corepack
+      run: corepack enable
+      shell: bash
+    - name: Install dependencies
+      run: yarn --immutable
+      shell: bash
