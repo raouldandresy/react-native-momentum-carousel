@@ -19,7 +19,7 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "check": "tsc --noEmit",
     "prepare": "bob build",
-    "release": "release-it --ci --dry-run"
+    "release": "release-it --ci"
   },
   "devDependencies": {
     "@react-native/eslint-config": "^0.73.1",

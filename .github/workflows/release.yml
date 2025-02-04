@@ -2,7 +2,14 @@
 
 name: Release 🚀
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Enable dry-run mode to test the release process without publishing'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   check-linting:
@@ -64,7 +71,12 @@ jobs:
         run: yarn prepare
 
       - name: Release
-        run: yarn release
+        run: |
+          if [ ${{ inputs.dry-run }} = true ]; then
+            yarn release-it --dry-run
+          else
+            yarn release-it
+          fi
         env:
           # (5) Make GITHUB_TOKEN available to release-it but use the GitHub App token
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
