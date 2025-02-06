@@ -21,6 +21,8 @@
     "prepare": "bob build"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
     "@react-native/eslint-config": "^0.73.1",
     "@types/react": "^18.2.6",
     "eslint": "^8.51.0",
