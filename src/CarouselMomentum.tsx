@@ -46,8 +46,11 @@ interface CarouselProps<Item> extends Pick<FlatListProps<Item>, 'onEndReached'|'
   carouselStyle?: StyleProp<ViewStyle>;
   itemStyle?: StyleProp<ViewStyle>;
   data: Animated.WithAnimatedValue<Item>[];
-  sliderWidth: number;
-  itemWidth: number;
+  sliderWidth?: number;
+  itemWidth?: number;
+  vertical?: boolean;
+  sliderHeight?: number;
+  itemHeight?: number;
   renderItem: ListRenderItem<Item>;
   keyExtractor?: (item: Item, index: number) => string;
   onSnap: (index: number) => void;
@@ -83,6 +86,9 @@ const CarouselMomentum = <Item,>(
     data,
     sliderWidth,
     itemWidth,
+    vertical = false,
+    sliderHeight,
+    itemHeight,
     renderItem,
     keyExtractor,
     onSnap,
@@ -99,6 +105,19 @@ const CarouselMomentum = <Item,>(
   }: CarouselProps<Item>,
   ref: ForwardedRef<CarouselRef>
 ) => {
+  if(vertical && (!sliderHeight || isNaN(sliderHeight))){
+    throw ("Needed a right number value for sliderHeight")
+  }
+  if(vertical && (!itemHeight || isNaN(itemHeight))){
+    throw ("Needed a right number value for itemHeight")
+  }
+  if(!vertical && (!sliderWidth || isNaN(sliderWidth))){
+    throw ("Needed a right number value for sliderWidth")
+  }
+  if(!vertical && (!itemWidth || isNaN(itemWidth))){
+    throw ("Needed a right number value for itemWidth")
+  }
+
   // Create an animated version of FlatList to support animations
   const AnimatedFlatList = useMemo(
     () =>
@@ -134,16 +153,16 @@ const CarouselMomentum = <Item,>(
     NonNullable<FlatListProps<Item>['onScroll']>
   >(
     (e) => {
-      const offsetX = e.nativeEvent.contentOffset.x; // Get the horizontal scroll offset
+      const offsetX = !vertical ? e.nativeEvent.contentOffset.x : e.nativeEvent.contentOffset.y;// Get the horizontal scroll offset
       scrollX.setValue(offsetX); // Update the scroll position for animations
-      const nextIndex = Math.round(offsetX / itemWidth); // Calculate the current index
+      const nextIndex = Math.round(offsetX / (!vertical ? itemWidth : itemHeight)); // Calculate the current index
       // If the index changes, call the onSnap callback
       if (nextIndex !== currentIndex) {
         setCurrentIndex(nextIndex); // Update the state with the new index
         onSnap(nextIndex);
       }
     },
-    [currentIndex, itemWidth, onSnap, scrollX]
+    [currentIndex, itemWidth, itemHeight, onSnap, scrollX]
   );
 
   /**
@@ -151,8 +170,8 @@ const CarouselMomentum = <Item,>(
    * This is used when we want to programmatically scroll to a specific item.
    */
   const calculateItemOffsetStatic = useCallback(
-    (index: number) => index * itemWidth,
-    [itemWidth]
+    (index: number) => index * (!vertical ? itemWidth : itemHeight) ,
+    [itemWidth, itemHeight]
   );
 
   /**
@@ -247,10 +266,10 @@ const CarouselMomentum = <Item,>(
   const calculateCenteredItemOffset = useCallback(
     (index: number) => {
       // Calculate the offset needed to center the item
-      const centerOffset = (sliderWidth - itemWidth) / 2;
-      return index * itemWidth - centerOffset;
+      const centerOffset = !vertical ? (sliderWidth - itemWidth) / 2 : (sliderHeight - itemHeight);
+      return index * (!vertical ? itemWidth : itemHeight) - centerOffset;
     },
-    [sliderWidth, itemWidth] // Recalculate if sliderWidth or itemWidth changes
+    [sliderWidth, itemWidth, sliderHeight, itemHeight] // Recalculate if sliderWidth or itemWidth changes
   );
 
   const getHandleItemInternalRef = useCallback(
@@ -292,9 +311,9 @@ const CarouselMomentum = <Item,>(
     (info) => (
       <Animated.View
         ref={getHandleItemInternalRef(info.index)}
-        style={[
+        key={info.index.toString()}
+        style={[!vertical ? {width: itemWidth} : {height: itemHeight},
           {
-            width: itemWidth,
             transform: [
               {
                 scale: scrollX.interpolate({
@@ -325,6 +344,7 @@ const CarouselMomentum = <Item,>(
       inactiveScale,
       itemStyle,
       itemWidth,
+      itemHeight,
       renderItem,
       scrollX,
     ] // Recalculate when these values change
@@ -332,7 +352,7 @@ const CarouselMomentum = <Item,>(
 
   return (
     <View
-      style={[{ width: sliderWidth }, carouselStyle]}
+      style={[!vertical ? { width: sliderWidth } : {height: sliderHeight}, carouselStyle]}
       accessibilityLabel={accessibilityLabelCarousel}
     >
       {/* The main AnimatedFlatList that renders the carousel */}
@@ -341,9 +361,9 @@ const CarouselMomentum = <Item,>(
         ref={flatListRef} // Reference to FlatList for direct manipulation
         data={data} // The data to display in the carousel
         keyExtractor={keyExtractor ?? keyExtractorInternal} // Use the provided or internal keyExtractor
-        horizontal // Display items horizontally
+        horizontal={!vertical} // Display items horizontally
         showsHorizontalScrollIndicator={false} // Hide the scroll indicator
-        snapToInterval={itemWidth} // Snapping behavior after each item
+        snapToInterval={!vertical ? itemWidth : itemHeight} // Snapping behavior after each item
         decelerationRate="fast" // Fast deceleration for smooth scrolling
         bounces={false} // Disable the bounce effect on scroll edges
         onScroll={handleScroll} // Handle scroll events
@@ -351,11 +371,16 @@ const CarouselMomentum = <Item,>(
         onMomentumScrollEnd={onMomentumScrollEnd} // Callback triggered when momentum scroll ends
         onMomentumScrollBegin={onMomentumScrollBegin} // Callback triggered when momentum scroll starts
         renderItem={renderItemInternal} // Render each item with animation
-        contentContainerStyle={{
+        contentContainerStyle={!vertical ? {
           paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
-        }}
+        } : 
+        {
+          paddingVertical: (sliderHeight - itemHeight) / 2
+        }
+      }
+        showsVerticalScrollIndicator={false}
       />
-      {showPagination && (
+      {(showPagination && !vertical) && (
         <Pagination
           dataLength={data.length}
           currentIndex={currentIndex}
