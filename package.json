@@ -18,14 +18,17 @@
     "example": "yarn workspace react-native-momentum-carousel-example",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "check": "tsc --noEmit",
-    "prepare": "bob build"
+    "prepare": "bob build && husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
     "@react-native/eslint-config": "^0.73.1",
     "@types/react": "^18.2.6",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
+    "husky": "^9.1.7",
     "prettier": "^3.0.3",
     "react": "18.3.1",
     "react-native": "0.76.6",
