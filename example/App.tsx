@@ -26,7 +26,11 @@ import {
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 
-import { CarouselMomentum, CarouselRef } from 'react-native-momentum-carousel';
+import {
+  CarouselMomentum,
+  CarouselMomentumAnimationType,
+  CarouselRef,
+} from 'react-native-momentum-carousel';
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -185,6 +189,7 @@ function App(): React.JSX.Element {
             inactiveScale={0.8}
             showPagination
             paginationStyle={{ activeBullet: {}, bullet: {}, container: {} }}
+            animation={CarouselMomentumAnimationType.Stack}
           />
         </View>
         <View style={styles.buttonsContainer}>
@@ -201,20 +206,6 @@ function App(): React.JSX.Element {
             value={String(autoplayInterval)}
             placeholder={'Set autoplay interval'}
             onChangeText={handleAutoplayIntervalChange}
-          />
-        </View>
-
-        <View style={styles.accessibilityContainer}>
-          <View style={styles.accessibilityTitle}>
-            <Text>Accessible Carousel</Text>
-          </View>
-
-          <CarouselMomentum
-            data={accessibilityData}
-            sliderWidth={windowWidth}
-            itemWidth={windowWidth}
-            renderItem={renderAccessibilityItem}
-            onSnap={handleAccessibilityItemSnap}
           />
         </View>
       </ScrollView>

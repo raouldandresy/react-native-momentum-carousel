@@ -1,6 +1,6 @@
 # CarouselMomentum
 
-A customizable, animated, horizontal carousel component for React Native. The `CarouselMomentum` component enables smooth, momentum-based scrolling with features such as autoplay, looping, and animated item scaling. It is built using `Animated.FlatList` to provide smooth transitions during item scroll.
+A customizable, animated, horizontal carousel component for React Native. The `CarouselMomentum` component enables smooth, momentum-based scrolling with features such as autoplay, looping, animated item scaling, and pagination. It is built using `Animated.FlatList` from react-native-reanimated to provide smooth transitions during item scroll.
 
 ## Features
 - **Momentum Scroll:** Smooth transitions with momentum-based scrolling.
@@ -9,31 +9,31 @@ A customizable, animated, horizontal carousel component for React Native. The `C
 - **Scaling Effect:** Inactive items scale down as they move away from the center of the carousel.
 - **Snapping:** Items snap to position when scrolling stops.
 - **Customizable:** Easily configurable with props like `sliderWidth`, `itemWidth`, `onSnap`, etc.
+- **Pagination:** Optional pagination indicators for improved navigation.
+- **Animations:** Choose from different animation styles for transitions.
 
 ## Installation
 
 To use the `CarouselMomentum` component, you can install it through `npm` or `yarn`.
 
 ```bash
-npm install carousel-momentum
+npm install react-native-momentum-carousel
 ```
 
 or
 
 ```bash
-yarn add carousel-momentum
+yarn add react-native-momentum-carousel
 ```
 
 ## Example Usage
-
-Here’s a quick example of how to use the `CarouselMomentum` component.
 
 ### 1. Basic Usage:
 
 ```tsx
 import React, { useState } from 'react';
 import { View, Text, Image } from 'react-native';
-import CarouselMomentum from 'carousel-momentum';
+import CarouselMomentum from 'react-native-momentum-carousel';
 
 const App = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -67,6 +67,7 @@ const App = () => {
         autoPlayInterval={3000}
         loop={true}
         inactiveScale={0.8}
+        showPagination={true}
       />
       <Text style={{ textAlign: 'center', marginTop: 20 }}>Current Index: {currentIndex}</Text>
     </View>
@@ -78,21 +79,22 @@ export default App;
 
 ### 2. Customizing the Carousel
 
-You can customize the behavior of the carousel through various props.
-
 ```tsx
 <CarouselMomentum
-  data={data} // Array of items to display
-  sliderWidth={300} // Width of the carousel container
-  itemWidth={200} // Width of each carousel item
-  renderItem={renderItem} // Render function for each item
-  keyExtractor={(item) => item.id} // Key extractor for list items
-  onSnap={(index) => console.log('Snapped to item:', index)} // Callback when an item is centered
-  accessibilityLabelCarousel="Image carousel" // Optional accessibility label
-  autoPlay={true} // Enable auto-scroll
-  autoPlayInterval={5000} // Time interval for auto-scroll (in ms)
-  loop={true} // Enable loop when reaching the last item
-  inactiveScale={0.7} // Scale of items when they are not in focus
+  data={data}
+  sliderWidth={300}
+  itemWidth={200}
+  renderItem={renderItem}
+  keyExtractor={(item) => item.id}
+  onSnap={(index) => console.log('Snapped to item:', index)}
+  autoPlay={true}
+  autoPlayInterval={5000}
+  loop={true}
+  inactiveScale={0.7}
+  showPagination={true}
+  paginationStyle={{ container: {}, bullet: {}, activeBullet: {} }}
+  animation={'Stack'}
+  customAnimation={false}
 />
 ```
 
@@ -116,6 +118,10 @@ You can customize the behavior of the carousel through various props.
 - **`loop`**: If `true`, the carousel will loop back to the first item after reaching the end.
 - **`autoPlayInterval`**: Time interval (in ms) for auto-play. Defaults to 3000ms.
 - **`inactiveScale`**: Scale value for inactive items. Defaults to 0.8.
+- **`showPagination`**: Boolean to show pagination indicators.
+- **`paginationStyle`**: Style object for customizing pagination appearance.
+- **`animation`**: Enum defining the animation type (`Default`, `Stack`, `Tinder`).
+- **`customAnimation`**: Boolean to enable custom animations.
 
 ## Methods
 
@@ -129,7 +135,7 @@ When using the `CarouselMomentum` component with a ref, you can access the follo
 ```tsx
 import React, { useRef } from 'react';
 import { Button, View } from 'react-native';
-import CarouselMomentum from 'carousel-momentum';
+import CarouselMomentum from 'react-native-momentum-carousel';
 
 const App = () => {
   const carouselRef = useRef();
@@ -156,39 +162,15 @@ const App = () => {
 export default App;
 ```
 
-## Styling
-
-You can customize the carousel's appearance by modifying the `styles` used in the component. For instance, to adjust the container, item, or other aspects of the UI, you can create a custom `style` file.
-
-```ts
-import { StyleSheet } from 'react-native';
-
-export const styles = StyleSheet.create({
-  container: {
-    // Style the container of the carousel
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  itemContainer: {
-    // Style each individual item in the carousel
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-});
-```
-
 ## 🖼️ Demo
 
 Here’s a quick demo of how the component works:
 
 ![Demo GIF](https://github.com/raouldandresy/gif/blob/main/react-native-carousel-momentum.gif)
 
-
 ## Notes
 
-- The `CarouselMomentum` component uses `Animated.FlatList` internally to provide smooth scroll animations.
-- The component supports both horizontal and vertical scrolling, but this implementation focuses on horizontal scrolling.
+- To provide right behaviour for the Accessibility on snapping, you need to configure the full width/height. It means that the slider and item has to be the same size.
 
 ## Contributing
 
@@ -197,3 +179,4 @@ We welcome contributions! Feel free to open issues or submit pull requests.
 ## License
 
 This component is open source and released under the MIT License.
+
