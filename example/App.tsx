@@ -43,6 +43,7 @@ function App(): React.JSX.Element {
   const [autoplay, setAutoplay] = useState(false);
   const [loop, setLoop] = useState(false);
   const [autoplayInterval, setAutoplayInterval] = useState(3);
+  const [type, setType] = useState(CarouselMomentumAnimationType.Default);
 
   const images = useMemo(
     () => [
@@ -78,6 +79,16 @@ function App(): React.JSX.Element {
   const handleToggleAutoplayPress = useCallback(() => {
     setAutoplay((current) => !current);
   }, []);
+
+  const handleTogglePress = useCallback(() => {
+    if (type === CarouselMomentumAnimationType.Default) {
+      setType(CarouselMomentumAnimationType.Stack);
+    } else if (type === CarouselMomentumAnimationType.Stack) {
+      setType(CarouselMomentumAnimationType.Tinder);
+    } else {
+      setType(CarouselMomentumAnimationType.Default);
+    }
+  }, [type]);
 
   const handleToggleLoopPress = useCallback(() => {
     setLoop((current) => !current);
@@ -164,6 +175,7 @@ function App(): React.JSX.Element {
         <Text>{`Current index: ${currentIndex}`}</Text>
         <Text>{`Autoplay: ${autoplay ? 'true' : 'false'}`}</Text>
         <Text>{`Looping: ${loop ? 'true' : 'false'}`}</Text>
+        <Text>{`Type: ${type}`}</Text>
       </View>
 
       <ScrollView
@@ -179,7 +191,7 @@ function App(): React.JSX.Element {
             ref={flatListRef}
             data={images}
             sliderWidth={windowWidth}
-            itemWidth={windowWidth}
+            itemWidth={windowWidth * 0.8}
             autoPlay={autoplay}
             loop={loop}
             autoPlayInterval={autoplayInterval * 1000}
@@ -189,7 +201,7 @@ function App(): React.JSX.Element {
             inactiveScale={0.8}
             showPagination
             paginationStyle={{ activeBullet: {}, bullet: {}, container: {} }}
-            animation={CarouselMomentumAnimationType.Stack}
+            animation={type}
           />
         </View>
         <View style={styles.buttonsContainer}>
@@ -199,6 +211,9 @@ function App(): React.JSX.Element {
           />
           <View style={styles.separator} />
           <Button title={'Toggle loop'} onPress={handleToggleLoopPress} />
+          <View style={styles.separator} />
+          <Button title={'Toggle animation type'} onPress={handleTogglePress} />
+          <View style={styles.separator} />
           <View style={styles.separator} />
           <Text>Set an autoplay interval in seconds</Text>
           <TextInput
@@ -215,7 +230,7 @@ function App(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: 20,
+    marginVertical: 20,
     alignItems: 'center',
   },
   sectionContainer: {
@@ -267,6 +282,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: Colors.white,
   },
 });
 

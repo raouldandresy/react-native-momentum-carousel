@@ -26,6 +26,22 @@ or
 yarn add react-native-momentum-carousel
 ```
 
+## Breaking Dependency from version 1.0.0
+
+This library needs these dependencies to be installed in your project before you can use it:
+
+```bash
+npm install react-native-reanimated 
+```
+
+or
+
+```bash
+yarn add react-native-reanimated 
+```
+
+For more info on configuration: https://docs.swmansion.com/react-native-reanimated/
+
 ## Example Usage
 
 ### 1. Basic Usage:
