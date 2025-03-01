@@ -64,7 +64,7 @@ export function useLayoutStackAnimation(data: ItemCarouselProps) {
             },
       ],
     };
-  }, [data.scrollX.value, inputRange]);
+  }, [data.scrollX, inputRange]);
 
   // Return the animated style that will be applied to each item
   return animatedStyle;
@@ -110,7 +110,7 @@ export function useLayoutDefaultAnimation(data: ItemCarouselProps) {
         },
       ],
     };
-  }, [data.scrollX.value, inputRange]);
+  }, [data.scrollX, inputRange]);
 
   // Return the default animated style
   return animatedStyle;
@@ -184,7 +184,7 @@ export function useLayoutTinderAnimation(data: ItemCarouselProps) {
         },
       ],
     };
-  }, [data.scrollX.value, inputRange]);
+  }, [data.scrollX, inputRange]);
 
   // Return the animated style that creates the Tinder effect
   return animatedStyle;
