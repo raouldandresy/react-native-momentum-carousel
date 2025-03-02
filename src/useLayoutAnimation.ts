@@ -159,7 +159,7 @@ export function useLayoutTinderAnimation(data: ItemCarouselProps) {
           translateX: interpolate(
             data.scrollX.value,
             inputRange,
-            [100, 0, data.itemWidth], // Move the item horizontally for the "stack" effect
+            [100, 0, 100], // Move the item horizontally for the "stack" effect
             Extrapolation.CLAMP
           ),
         },
