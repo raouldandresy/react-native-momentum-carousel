@@ -173,7 +173,7 @@ const CarouselMomentum = <Item,>(
           : event.contentOffset.y; // Get the horizontal scroll offset
         scrollX.set(offsetX); // Update the scroll position for animations
         const nextIndex = Math.round(
-          offsetX / (!vertical ? itemWidth : itemHeight)
+          offsetX / (!vertical ? itemWidth! : itemHeight!)
         ); // Calculate the current index
         // If the index changes, call the onSnap callback
         if (nextIndex !== currentIndex) {
@@ -190,8 +190,8 @@ const CarouselMomentum = <Item,>(
    * This is used when we want to programmatically scroll to a specific item.
    */
   const calculateItemOffsetStatic = useCallback(
-    (index: number) => index * (!vertical ? itemWidth : itemHeight),
-    [itemWidth, itemHeight]
+    (index: number) => index * (!vertical ? itemWidth! : itemHeight!),
+    [vertical, itemWidth, itemHeight]
   );
 
   /**
@@ -322,11 +322,11 @@ const CarouselMomentum = <Item,>(
           itemStyle={itemStyle}
           renderItem={renderItem}
           info={info}
-          itemWidth={itemWidth}
+          itemWidth={itemWidth!}
           inactiveScale={inactiveScale}
           scrollX={scrollX}
           animation={animation}
-          itemHeight={itemHeight}
+          itemHeight={itemHeight!}
           vertical={vertical}
           customAnimation={customAnimation}
         />
@@ -373,10 +373,10 @@ const CarouselMomentum = <Item,>(
         contentContainerStyle={
           !vertical
             ? {
-                paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
+                paddingHorizontal: (sliderWidth! - itemWidth!) / 2, // Center the items within the container
               }
             : {
-                paddingVertical: (sliderHeight - itemHeight) / 2,
+                paddingVertical: (sliderHeight! - itemHeight!) / 2,
               }
         }
         showsVerticalScrollIndicator={false}
