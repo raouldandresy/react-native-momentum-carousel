@@ -5,7 +5,6 @@ import React, {
   useImperativeHandle,
   ForwardedRef,
   useEffect,
-  useMemo,
   PropsWithoutRef,
   RefAttributes,
   Component,
@@ -14,7 +13,6 @@ import React, {
 import {
   View,
   FlatList,
-  Animated,
   ListRenderItem,
   FlatListProps,
   StyleProp,
@@ -23,6 +21,12 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import Pagination from './Pagination';
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from 'react-native-reanimated';
+import ItemCarousel from './ItemCarousel';
 
 /**
  * CarouselProps defines the expected properties for the CarouselMomentum component.
@@ -41,11 +45,22 @@ import Pagination from './Pagination';
  * - `inactiveScale`: Optional number for scale inactive items
  * - `showPagination`: Optional boolean to show pagination component.
  * - `paginationStyle`: Optional style for pagination component {container:{},bullet:{},activeBullet:{}}.
+ * - `animation`: CarouselMomentumAnimationType Enum to choose the suitable animation.
+ * - `customAnimation`: Optional boolean to avoid default animation.
  */
-interface CarouselProps<Item> extends Pick<FlatListProps<Item>, 'onEndReached'|'onEndReachedThreshold'|'onContentSizeChange'|'onLayout'|'onRefresh'|'onViewableItemsChanged'>{
+interface CarouselProps<Item>
+  extends Pick<
+    FlatListProps<Item>,
+    | 'onEndReached'
+    | 'onEndReachedThreshold'
+    | 'onContentSizeChange'
+    | 'onLayout'
+    | 'onRefresh'
+    | 'onViewableItemsChanged'
+  > {
   carouselStyle?: StyleProp<ViewStyle>;
   itemStyle?: StyleProp<ViewStyle>;
-  data: Animated.WithAnimatedValue<Item>[];
+  data: Item[];
   sliderWidth?: number;
   itemWidth?: number;
   vertical?: boolean;
@@ -67,11 +82,19 @@ interface CarouselProps<Item> extends Pick<FlatListProps<Item>, 'onEndReached'|'
     bullet?: StyleProp<ViewStyle>;
     activeBullet?: StyleProp<ViewStyle>;
   };
+  animation: CarouselMomentumAnimationType;
+  customAnimation?: boolean;
 }
 
 export interface CarouselRef {
   getCurrentIndex: () => number; // Method to get the current index of the carousel
   goToIndex: (index: number) => void; // Method to scroll to a specific index
+}
+
+export enum CarouselMomentumAnimationType {
+  Default,
+  Stack,
+  Tinder,
 }
 
 /**
@@ -101,34 +124,27 @@ const CarouselMomentum = <Item,>(
     inactiveScale,
     showPagination,
     paginationStyle,
+    animation,
+    customAnimation,
     ...otherProps
   }: CarouselProps<Item>,
   ref: ForwardedRef<CarouselRef>
 ) => {
-  if(vertical && (!sliderHeight || isNaN(sliderHeight))){
-    throw ("Needed a right number value for sliderHeight")
+  if (vertical && (!sliderHeight || isNaN(sliderHeight))) {
+    throw 'Needed a right number value for sliderHeight';
   }
-  if(vertical && (!itemHeight || isNaN(itemHeight))){
-    throw ("Needed a right number value for itemHeight")
+  if (vertical && (!itemHeight || isNaN(itemHeight))) {
+    throw 'Needed a right number value for itemHeight';
   }
-  if(!vertical && (!sliderWidth || isNaN(sliderWidth))){
-    throw ("Needed a right number value for sliderWidth")
+  if (!vertical && (!sliderWidth || isNaN(sliderWidth))) {
+    throw 'Needed a right number value for sliderWidth';
   }
-  if(!vertical && (!itemWidth || isNaN(itemWidth))){
-    throw ("Needed a right number value for itemWidth")
+  if (!vertical && (!itemWidth || isNaN(itemWidth))) {
+    throw 'Needed a right number value for itemWidth';
   }
-
-  // Create an animated version of FlatList to support animations
-  const AnimatedFlatList = useMemo(
-    () =>
-      Animated.createAnimatedComponent(FlatList) as Animated.AnimatedComponent<
-        typeof FlatList<Item>
-      >,
-    []
-  );
 
   // Reference to track the horizontal scroll position for animations
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const scrollX = useSharedValue(0);
 
   // State for storing the current index of the carousel
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -149,18 +165,22 @@ const CarouselMomentum = <Item,>(
    * handleScroll is invoked during the scroll event to update the current index.
    * It also triggers the `onSnap` callback when the current index changes.
    */
-  const handleScroll = useCallback<
-    NonNullable<FlatListProps<Item>['onScroll']>
-  >(
-    (e) => {
-      const offsetX = !vertical ? e.nativeEvent.contentOffset.x : e.nativeEvent.contentOffset.y;// Get the horizontal scroll offset
-      scrollX.setValue(offsetX); // Update the scroll position for animations
-      const nextIndex = Math.round(offsetX / (!vertical ? itemWidth : itemHeight)); // Calculate the current index
-      // If the index changes, call the onSnap callback
-      if (nextIndex !== currentIndex) {
-        setCurrentIndex(nextIndex); // Update the state with the new index
-        onSnap(nextIndex);
-      }
+  const scrollHandler = useAnimatedScrollHandler(
+    {
+      onScroll: (event) => {
+        const offsetX = !vertical
+          ? event.contentOffset.x
+          : event.contentOffset.y; // Get the horizontal scroll offset
+        scrollX.set(offsetX); // Update the scroll position for animations
+        const nextIndex = Math.round(
+          offsetX / (!vertical ? itemWidth : itemHeight)
+        ); // Calculate the current index
+        // If the index changes, call the onSnap callback
+        if (nextIndex !== currentIndex) {
+          runOnJS(setCurrentIndex)(nextIndex); // Update the state with the new index
+          runOnJS(onSnap)(nextIndex);
+        }
+      },
     },
     [currentIndex, itemWidth, itemHeight, onSnap, scrollX]
   );
@@ -170,7 +190,7 @@ const CarouselMomentum = <Item,>(
    * This is used when we want to programmatically scroll to a specific item.
    */
   const calculateItemOffsetStatic = useCallback(
-    (index: number) => index * (!vertical ? itemWidth : itemHeight) ,
+    (index: number) => index * (!vertical ? itemWidth : itemHeight),
     [itemWidth, itemHeight]
   );
 
@@ -259,22 +279,9 @@ const CarouselMomentum = <Item,>(
     };
   }, [autoPlay, startAutoplay, stopAutoplay]);
 
-  /**
-   * calculateCenteredItemOffset calculates the dynamic offset to center the item within the carousel.
-   * This helps in applying animations to scale the item as it approaches the center of the viewport.
-   */
-  const calculateCenteredItemOffset = useCallback(
-    (index: number) => {
-      // Calculate the offset needed to center the item
-      const centerOffset = !vertical ? (sliderWidth - itemWidth) / 2 : (sliderHeight - itemHeight);
-      return index * (!vertical ? itemWidth : itemHeight) - centerOffset;
-    },
-    [sliderWidth, itemWidth, sliderHeight, itemHeight] // Recalculate if sliderWidth or itemWidth changes
-  );
-
   const getHandleItemInternalRef = useCallback(
     (index: number) => {
-      return (_ref: View | Animated.LegacyRef<View> | null) => {
+      return (_ref: View | null) => {
         if (index !== currentIndex || _ref === null) {
           return;
         }
@@ -308,56 +315,48 @@ const CarouselMomentum = <Item,>(
    * as items approach or leave the center of the viewport.
    */
   const renderItemInternal = useCallback<ListRenderItem<Item>>(
-    (info) => (
-      <Animated.View
-        ref={getHandleItemInternalRef(info.index)}
-        key={info.index.toString()}
-        style={[!vertical ? {width: itemWidth} : {height: itemHeight},
-          {
-            transform: [
-              {
-                scale: scrollX.interpolate({
-                  inputRange: [
-                    calculateCenteredItemOffset(info.index - 1), // Left item
-                    calculateCenteredItemOffset(info.index), // Current item
-                    calculateCenteredItemOffset(info.index + 1), // Right item
-                  ],
-                  outputRange: [
-                    inactiveScale ? inactiveScale : 0.8,
-                    1,
-                    inactiveScale ? inactiveScale : 0.8,
-                  ], // Scale items to 0.8 when off-center and 1 when centered
-                  extrapolate: 'clamp', // Clamp the scale to avoid values beyond the range
-                }),
-              },
-            ],
-          },
-          itemStyle,
-        ]}
-      >
-        {renderItem(info)}
-      </Animated.View>
-    ),
+    (info) => {
+      return (
+        <ItemCarousel
+          getHandleItemInternalRef={getHandleItemInternalRef}
+          itemStyle={itemStyle}
+          renderItem={renderItem}
+          info={info}
+          itemWidth={itemWidth}
+          inactiveScale={inactiveScale}
+          scrollX={scrollX}
+          animation={animation}
+          itemHeight={itemHeight}
+          vertical={vertical}
+          customAnimation={customAnimation}
+        />
+      );
+    },
     [
-      calculateCenteredItemOffset,
+      animation,
+      customAnimation,
       getHandleItemInternalRef,
       inactiveScale,
+      itemHeight,
       itemStyle,
       itemWidth,
-      itemHeight,
       renderItem,
       scrollX,
+      vertical,
     ] // Recalculate when these values change
   );
 
   return (
     <View
-      style={[!vertical ? { width: sliderWidth } : {height: sliderHeight}, carouselStyle]}
+      style={[
+        !vertical ? { width: sliderWidth } : { height: sliderHeight },
+        carouselStyle,
+      ]}
       accessibilityLabel={accessibilityLabelCarousel}
     >
       {/* The main AnimatedFlatList that renders the carousel */}
-      <AnimatedFlatList
-       {...otherProps}
+      <Animated.FlatList
+        {...otherProps}
         ref={flatListRef} // Reference to FlatList for direct manipulation
         data={data} // The data to display in the carousel
         keyExtractor={keyExtractor ?? keyExtractorInternal} // Use the provided or internal keyExtractor
@@ -366,21 +365,23 @@ const CarouselMomentum = <Item,>(
         snapToInterval={!vertical ? itemWidth : itemHeight} // Snapping behavior after each item
         decelerationRate="fast" // Fast deceleration for smooth scrolling
         bounces={false} // Disable the bounce effect on scroll edges
-        onScroll={handleScroll} // Handle scroll events
+        onScroll={scrollHandler} // Handle scroll events
         scrollEventThrottle={16} // Throttle scroll event updates for smoother performance
         onMomentumScrollEnd={onMomentumScrollEnd} // Callback triggered when momentum scroll ends
         onMomentumScrollBegin={onMomentumScrollBegin} // Callback triggered when momentum scroll starts
         renderItem={renderItemInternal} // Render each item with animation
-        contentContainerStyle={!vertical ? {
-          paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
-        } : 
-        {
-          paddingVertical: (sliderHeight - itemHeight) / 2
+        contentContainerStyle={
+          !vertical
+            ? {
+                paddingHorizontal: (sliderWidth - itemWidth) / 2, // Center the items within the container
+              }
+            : {
+                paddingVertical: (sliderHeight - itemHeight) / 2,
+              }
         }
-      }
         showsVerticalScrollIndicator={false}
       />
-      {(showPagination && !vertical) && (
+      {showPagination && !vertical && (
         <Pagination
           dataLength={data.length}
           currentIndex={currentIndex}

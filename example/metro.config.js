@@ -13,6 +13,11 @@ const modules = Object.keys({ ...pak.peerDependencies });
  *
  * @type {import('metro-config').MetroConfig}
  */
+
+const {
+  wrapWithReanimatedMetroConfig,
+} = require('react-native-reanimated/metro-config');
+
 const config = {
   watchFolders: [root],
 
@@ -42,4 +47,6 @@ const config = {
   },
 };
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+module.exports = wrapWithReanimatedMetroConfig(
+  mergeConfig(getDefaultConfig(__dirname), config)
+);
