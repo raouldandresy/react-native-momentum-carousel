@@ -162,30 +162,6 @@ const CarouselMomentum = <Item,>(
   }));
 
   /**
-   * handleScroll is invoked during the scroll event to update the current index.
-   * It also triggers the `onSnap` callback when the current index changes.
-   */
-  const scrollHandler = useAnimatedScrollHandler(
-    {
-      onScroll: (event) => {
-        const offsetX = !vertical
-          ? event.contentOffset.x
-          : event.contentOffset.y; // Get the horizontal scroll offset
-        scrollX.set(offsetX); // Update the scroll position for animations
-        const nextIndex = Math.round(
-          offsetX / (!vertical ? itemWidth! : itemHeight!)
-        ); // Calculate the current index
-        // If the index changes, call the onSnap callback
-        if (nextIndex !== currentIndex) {
-          runOnJS(setCurrentIndex)(nextIndex); // Update the state with the new index
-          runOnJS(onSnap)(nextIndex);
-        }
-      },
-    },
-    [currentIndex, itemWidth, itemHeight, onSnap, scrollX]
-  );
-
-  /**
    * Calculates the static offset of an item based on its index.
    * This is used when we want to programmatically scroll to a specific item.
    */
@@ -214,6 +190,50 @@ const CarouselMomentum = <Item,>(
       }
     },
     [loop, data.length, calculateItemOffsetStatic, onSnap]
+  );
+
+  /**
+   * handleScroll is invoked during the scroll event to update the current index.
+   * It also triggers the `onSnap` callback when the current index changes.
+   */
+  const scrollHandler = useAnimatedScrollHandler(
+    {
+      onScroll: (event) => {
+        let offsetX = !vertical ? event.contentOffset.x : event.contentOffset.y; // Get the horizontal scroll offset
+        let { velocity } = event;
+        const rawIndex = Math.round(
+          offsetX / (!vertical ? itemWidth! : itemHeight!)
+        ); // Calculate the current index
+        const nextIndex = rawIndex === -0 ? 0 : rawIndex;
+        scrollX.set(offsetX); // Update the scroll position for animations
+
+        if (loop) {
+          const isScrollingBackFromStart =
+            nextIndex === 0 &&
+            Math.abs(velocity?.x ?? 0) < 0.05 &&
+            offsetX <= 0;
+
+          const isScrollingForwardFromEnd =
+            nextIndex === data.length - 1 && velocity?.x === 0;
+
+          if (isScrollingBackFromStart) {
+            runOnJS(goToIndex)(data.length - 1);
+            return;
+          }
+
+          if (isScrollingForwardFromEnd) {
+            runOnJS(goToIndex)(0);
+            return;
+          }
+        }
+        // If the index changes, call the onSnap callback
+        if (nextIndex !== currentIndex) {
+          runOnJS(setCurrentIndex)(nextIndex); // Update the state with the new index
+          runOnJS(onSnap)(nextIndex);
+        }
+      },
+    },
+    [currentIndex, itemWidth, itemHeight, onSnap, scrollX]
   );
 
   /**
