@@ -5,7 +5,7 @@ A customizable, animated, horizontal carousel component for React Native. The `C
 ## Features
 - **Momentum Scroll:** Smooth transitions with momentum-based scrolling.
 - **Autoplay:** Automatically scrolls through the items at a specified interval.
-- **Looping:** Option to loop the carousel after reaching the last item.
+- **Looping:** Option to loop seamlessly during manual and automatic scrolling.
 - **Scaling Effect:** Inactive items scale down as they move away from the center of the carousel.
 - **Snapping:** Items snap to position when scrolling stops.
 - **Customizable:** Easily configurable with props like `sliderWidth`, `itemWidth`, `onSnap`, etc.
@@ -122,7 +122,7 @@ export default App;
 - **`sliderWidth`**: The width of the carousel container.
 - **`itemWidth`**: The width of each individual item.
 - **`renderItem`**: Function to render each item. Receives an object with `item` and `index` properties.
-- **`onSnap`**: Callback function triggered when an item is snapped to the center.
+- **`onSnap`**: Callback function triggered when scrolling settles on a different item.
 
 ### Optional Props:
 
@@ -131,7 +131,8 @@ export default App;
 - **`onMomentumScrollStart`**: Callback triggered when momentum scrolling starts.
 - **`onMomentumScrollEnd`**: Callback triggered when momentum scrolling ends.
 - **`autoPlay`**: If `true`, the carousel will automatically scroll through the items.
-- **`loop`**: If `true`, the carousel will loop back to the first item after reaching the end.
+- **`loop`**: If `true`, the carousel loops seamlessly during manual and automatic scrolling. Imperative indices wrap around; without looping they are clamped to the available items.
+- In loop mode, `onViewableItemsChanged` receives deduplicated logical indices. `onEndReached` and `onContentSizeChange` are not forwarded because the repeated backing list has no logical end and reports physical content size.
 - **`autoPlayInterval`**: Time interval (in ms) for auto-play. Defaults to 3000ms.
 - **`inactiveScale`**: Scale value for inactive items. Defaults to 0.8.
 - **`showPagination`**: Boolean to show pagination indicators.
@@ -145,6 +146,8 @@ When using the `CarouselMomentum` component with a ref, you can access the follo
 
 - **`getCurrentIndex()`**: Returns the current index of the carousel.
 - **`goToIndex(index: number)`**: Scrolls the carousel to the specified index.
+
+`goToIndex` wraps indices when `loop` is enabled and clamps them to the valid range otherwise. It does nothing while the carousel has no items.
 
 ### Example of Using Imperative Methods:
 
@@ -192,7 +195,35 @@ Here’s a quick demo of how the component works:
 
 We welcome contributions! Feel free to open issues or submit pull requests.
 
+Before opening a pull request, run the same checks used by CI:
+
+```bash
+yarn install --immutable
+yarn lint
+yarn check
+yarn bob build
+```
+
+GitHub Actions runs these checks for pull requests and pushes to `main`.
+
+## Releasing
+
+Releases are created locally with `release-it`. The command runs lint, type
+checking, and the package build, then prompts for a version, creates and pushes
+a Git tag, creates a GitHub Release, and publishes the package to npm.
+
+Before releasing, commit and push the changes to release, sign in to npm with
+`npm login`, and authenticate GitHub CLI with `gh auth login`. Set a GitHub
+token for the release process and run:
+
+```bash
+export GITHUB_TOKEN="$(gh auth token)"
+yarn release
+```
+
+The release command requires a clean working tree. It publishes the selected
+version immediately to the public npm registry.
+
 ## License
 
 This component is open source and released under the MIT License.
-

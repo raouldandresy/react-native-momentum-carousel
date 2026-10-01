@@ -28,6 +28,7 @@ export interface ItemCarouselProps {
 
   // Info passed by FlatList that contains item data and other information
   info: ListRenderItemInfo<any>;
+  renderInfo?: ListRenderItemInfo<any>;
 
   // Shared value for scroll position used to create animations based on scrollX
   scrollX: SharedValue<number>;
@@ -53,6 +54,7 @@ const ItemCarousel: React.FC<ItemCarouselProps> = ({
   itemStyle,
   renderItem,
   info,
+  renderInfo,
   scrollX,
   inactiveScale,
   animation,
@@ -92,7 +94,7 @@ const ItemCarousel: React.FC<ItemCarouselProps> = ({
       ]}
     >
       {/* Render the item using the provided renderItem function */}
-      {renderItem(info)}
+      {renderItem(renderInfo ?? info)}
     </Animated.View>
   );
 };

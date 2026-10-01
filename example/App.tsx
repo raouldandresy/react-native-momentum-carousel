@@ -47,11 +47,11 @@ function App(): React.JSX.Element {
 
   const images = useMemo(
     () => [
-      { id: '1', source: 'https://picsum.photos/411/250/' },
-      { id: '2', source: 'https://picsum.photos/411/250/' },
-      { id: '3', source: 'https://picsum.photos/411/250/' },
-      { id: '4', source: 'https://picsum.photos/411/250/' },
-      { id: '5', source: 'https://picsum.photos/411/250/' },
+      { id: '1', source: 'https://picsum.photos/seed/1/411/250' },
+      { id: '2', source: 'https://picsum.photos/seed/2/411/250' },
+      { id: '3', source: 'https://picsum.photos/seed/3/411/250' },
+      { id: '4', source: 'https://picsum.photos/seed/4/411/250' },
+      { id: '5', source: 'https://picsum.photos/seed/5/411/250' },
     ],
     []
   );
