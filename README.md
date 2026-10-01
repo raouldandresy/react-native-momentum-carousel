@@ -132,6 +132,7 @@ export default App;
 - **`onMomentumScrollEnd`**: Callback triggered when momentum scrolling ends.
 - **`autoPlay`**: If `true`, the carousel will automatically scroll through the items.
 - **`loop`**: If `true`, the carousel loops seamlessly during manual and automatic scrolling. Imperative indices wrap around; without looping they are clamped to the available items.
+- In loop mode, `onViewableItemsChanged` receives deduplicated logical indices. `onEndReached` and `onContentSizeChange` are not forwarded because the repeated backing list has no logical end and reports physical content size.
 - **`autoPlayInterval`**: Time interval (in ms) for auto-play. Defaults to 3000ms.
 - **`inactiveScale`**: Scale value for inactive items. Defaults to 0.8.
 - **`showPagination`**: Boolean to show pagination indicators.
