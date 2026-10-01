@@ -582,6 +582,7 @@ const CarouselMomentum = <Item,>(
     >
       {/* The main AnimatedFlatList that renders the carousel */}
       <Animated.FlatList
+        key={isLoopEnabled ? 'loop' : 'finite'}
         {...otherProps}
         ref={flatListRef} // Reference to FlatList for direct manipulation
         data={listData} // The data to display in the carousel
@@ -592,7 +593,9 @@ const CarouselMomentum = <Item,>(
               ? keyExtractor(item, index)
               : keyExtractorInternal(item, index)
         }
-        initialScrollIndex={isLoopEnabled ? data.length : 0}
+        initialScrollIndex={
+          isLoopEnabled ? data.length + currentIndex : currentIndex
+        }
         getItemLayout={(_, index) => ({
           length: itemSize,
           offset: itemSize * index,

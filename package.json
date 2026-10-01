@@ -18,6 +18,7 @@
     "example": "yarn workspace react-native-momentum-carousel-example",
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "check": "tsc --noEmit",
+    "release": "release-it",
     "prepare": "bob build && husky"
   },
   "devDependencies": {
@@ -36,6 +37,7 @@
     "react-native": "0.76.6",
     "react-native-builder-bob": "^0.43.1",
     "react-native-reanimated": "3.17.0",
+    "release-it": "^20.2.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {

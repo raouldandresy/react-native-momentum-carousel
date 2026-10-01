@@ -206,6 +206,24 @@ yarn bob build
 
 GitHub Actions runs these checks for pull requests and pushes to `main`.
 
+## Releasing
+
+Releases are created locally with `release-it`. The command runs lint, type
+checking, and the package build, then prompts for a version, creates and pushes
+a Git tag, creates a GitHub Release, and publishes the package to npm.
+
+Before releasing, commit and push the changes to release, sign in to npm with
+`npm login`, and authenticate GitHub CLI with `gh auth login`. Set a GitHub
+token for the release process and run:
+
+```bash
+export GITHUB_TOKEN="$(gh auth token)"
+yarn release
+```
+
+The release command requires a clean working tree. It publishes the selected
+version immediately to the public npm registry.
+
 ## License
 
 This component is open source and released under the MIT License.
