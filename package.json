@@ -25,7 +25,7 @@
     "@babel/core": "^7.29.7",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@react-native/eslint-config": "^0.76.9",
+    "@react-native/eslint-config": "^0.87.1",
     "@types/babel__core": "^7",
     "@types/react": "^18.3.31",
     "eslint": "^8.51.0",
