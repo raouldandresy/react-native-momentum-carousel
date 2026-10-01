@@ -59,6 +59,7 @@ interface CarouselProps<Item> extends Pick<
   | 'onContentSizeChange'
   | 'onLayout'
   | 'onRefresh'
+  | 'onScrollBeginDrag'
   | 'onViewableItemsChanged'
 > {
   carouselStyle?: StyleProp<ViewStyle>;
@@ -134,6 +135,7 @@ const CarouselMomentum = <Item,>(
     onContentSizeChange,
     onLayout,
     onRefresh,
+    onScrollBeginDrag,
     onViewableItemsChanged,
     ...otherProps
   }: CarouselProps<Item>,
@@ -152,8 +154,11 @@ const CarouselMomentum = <Item,>(
     throw 'Needed a right number value for itemWidth';
   }
 
-  // Reference to track the horizontal scroll position for animations
-  const scrollX = useSharedValue(0);
+  const itemSize = vertical ? itemHeight! : itemWidth!;
+  const isLoopEnabled = Boolean(loop && data.length > 1);
+
+  // Reference to track the physical scroll position for animations
+  const scrollX = useSharedValue(isLoopEnabled ? data.length * itemSize : 0);
 
   // State for storing the current index of the carousel
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -167,8 +172,7 @@ const CarouselMomentum = <Item,>(
   // Reference for managing autoplay intervals
   const autoplayRef = useRef<NodeJS.Timeout | null>(null);
   const snapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const itemSize = vertical ? itemHeight! : itemWidth!;
-  const isLoopEnabled = Boolean(loop && data.length > 1);
+  const loopViewableItemsRef = useRef(new Map<number, ViewToken<Item>>());
   const listData = useMemo(
     () => (isLoopEnabled ? [...data, ...data, ...data] : data),
     [data, isLoopEnabled]
@@ -263,40 +267,53 @@ const CarouselMomentum = <Item,>(
     ]
   );
 
+  const clearSnapTimeout = useCallback(() => {
+    if (snapTimeoutRef.current) {
+      clearTimeout(snapTimeoutRef.current);
+      snapTimeoutRef.current = null;
+    }
+  }, []);
+
   const handleMomentumScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = vertical
         ? event.nativeEvent.contentOffset.y
         : event.nativeEvent.contentOffset.x;
       const physicalIndex = Math.round(offset / itemSize);
-      if (snapTimeoutRef.current) {
-        clearTimeout(snapTimeoutRef.current);
-        snapTimeoutRef.current = null;
-      }
+      clearSnapTimeout();
       settleAtPhysicalIndex(physicalIndex);
 
       onMomentumScrollEnd?.();
     },
-    [itemSize, onMomentumScrollEnd, settleAtPhysicalIndex, vertical]
+    [
+      clearSnapTimeout,
+      itemSize,
+      onMomentumScrollEnd,
+      settleAtPhysicalIndex,
+      vertical,
+    ]
+  );
+
+  const handleScrollBeginDrag = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      clearSnapTimeout();
+      onScrollBeginDrag?.(event);
+    },
+    [clearSnapTimeout, onScrollBeginDrag]
   );
 
   const handleMomentumScrollBegin = useCallback(() => {
-    if (snapTimeoutRef.current) {
-      clearTimeout(snapTimeoutRef.current);
-      snapTimeoutRef.current = null;
-    }
+    clearSnapTimeout();
     onMomentumScrollBegin?.();
-  }, [onMomentumScrollBegin]);
+  }, [clearSnapTimeout, onMomentumScrollBegin]);
 
   const handleScrollEndDrag = useCallback(() => {
-    if (snapTimeoutRef.current) {
-      clearTimeout(snapTimeoutRef.current);
-    }
+    clearSnapTimeout();
     snapTimeoutRef.current = setTimeout(() => {
       snapTimeoutRef.current = null;
       settleAtPhysicalIndex(physicalIndexRef.current);
     }, 300);
-  }, [settleAtPhysicalIndex]);
+  }, [clearSnapTimeout, settleAtPhysicalIndex]);
 
   const scrollToPhysicalIndex = useCallback(
     (physicalIndex: number) => {
@@ -424,16 +441,18 @@ const CarouselMomentum = <Item,>(
       : nextIndex;
     lastSnappedIndexRef.current = nextIndex;
     setCurrentIndex(nextIndex);
+    const offset =
+      data.length === 0
+        ? 0
+        : calculateItemOffsetStatic(
+            isLoopEnabled ? data.length + nextIndex : nextIndex
+          );
+    scrollX.set(offset);
     flatListRef.current?.scrollToOffset({
       animated: false,
-      offset:
-        data.length === 0
-          ? 0
-          : calculateItemOffsetStatic(
-              isLoopEnabled ? data.length + nextIndex : nextIndex
-            ),
+      offset,
     });
-  }, [calculateItemOffsetStatic, data.length, isLoopEnabled, loop]);
+  }, [calculateItemOffsetStatic, data.length, isLoopEnabled, loop, scrollX]);
 
   useEffect(
     () => () => {
@@ -487,6 +506,7 @@ const CarouselMomentum = <Item,>(
         return;
       }
       if (!isLoopEnabled) {
+        loopViewableItemsRef.current.clear();
         onViewableItemsChanged(info);
         return;
       }
@@ -509,13 +529,36 @@ const CarouselMomentum = <Item,>(
           normalizedItems.set(normalized.index, normalized);
         }
       });
-      const normalizedChanged = new Map<number, ViewToken<Item>>();
+
+      const changedPhysicalTokens = new Map<number, ViewToken<Item>>();
       info.changed.forEach((token) => {
         const normalized = normalizeToken(token);
         if (normalized.index !== null) {
-          normalizedChanged.set(normalized.index, normalized);
+          changedPhysicalTokens.set(normalized.index, normalized);
         }
       });
+      const normalizedChanged = new Map<number, ViewToken<Item>>();
+      const previousItems = loopViewableItemsRef.current;
+      const logicalIndices = new Set([
+        ...previousItems.keys(),
+        ...normalizedItems.keys(),
+      ]);
+      logicalIndices.forEach((index) => {
+        const wasViewable = previousItems.has(index);
+        const isViewable = normalizedItems.has(index);
+        if (wasViewable === isViewable) {
+          return;
+        }
+
+        const token = isViewable
+          ? normalizedItems.get(index)
+          : (changedPhysicalTokens.get(index) ?? previousItems.get(index));
+        if (!token) {
+          return;
+        }
+        normalizedChanged.set(index, { ...token, isViewable });
+      });
+      loopViewableItemsRef.current = normalizedItems;
       onViewableItemsChanged({
         ...info,
         viewableItems: Array.from(normalizedItems.values()),
@@ -619,6 +662,7 @@ const CarouselMomentum = <Item,>(
         scrollEventThrottle={16} // Throttle scroll event updates for smoother performance
         onMomentumScrollEnd={handleMomentumScrollEnd}
         onMomentumScrollBegin={handleMomentumScrollBegin}
+        onScrollBeginDrag={handleScrollBeginDrag}
         renderItem={renderItemInternal} // Render each item with animation
         contentContainerStyle={
           !vertical
