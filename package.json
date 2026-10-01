@@ -28,7 +28,7 @@
     "@react-native/eslint-config": "^0.76.9",
     "@types/babel__core": "^7",
     "@types/react": "^18.3.31",
-    "eslint": "^8.51.0",
+    "eslint": "^10.11.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.5.6",
     "husky": "^9.1.7",
