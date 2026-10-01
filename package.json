@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "example": "yarn workspace react-native-momentum-carousel-example",
-    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "check": "tsc --noEmit",
     "prepare": "bob build && husky"
   },

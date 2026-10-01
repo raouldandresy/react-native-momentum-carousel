@@ -3,6 +3,7 @@ import React, {
   useState,
   useCallback,
   useImperativeHandle,
+  useMemo,
   ForwardedRef,
   useEffect,
   PropsWithoutRef,
@@ -15,6 +16,8 @@ import {
   FlatList,
   ListRenderItem,
   FlatListProps,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleProp,
   ViewStyle,
   findNodeHandle,
@@ -148,12 +151,22 @@ const CarouselMomentum = <Item,>(
 
   // State for storing the current index of the carousel
   const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
+  const physicalIndexRef = useRef(0);
+  const lastSnappedIndexRef = useRef(0);
 
   // Reference to the FlatList component for manual scroll control
   const flatListRef = useRef<FlatList<Item> | null>(null);
 
   // Reference for managing autoplay intervals
   const autoplayRef = useRef<NodeJS.Timeout | null>(null);
+  const snapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const itemSize = vertical ? itemHeight! : itemWidth!;
+  const isLoopEnabled = Boolean(loop && data.length > 1);
+  const listData = useMemo(
+    () => (isLoopEnabled ? [...data, ...data, ...data] : data),
+    [data, isLoopEnabled]
+  );
 
   // Expose imperative methods to the parent component via the `ref`
   useImperativeHandle(ref, () => ({
@@ -161,59 +174,163 @@ const CarouselMomentum = <Item,>(
     goToIndex: (index) => goToIndex(index), // Method to scroll to a specific index
   }));
 
-  /**
-   * handleScroll is invoked during the scroll event to update the current index.
-   * It also triggers the `onSnap` callback when the current index changes.
-   */
-  const scrollHandler = useAnimatedScrollHandler(
-    {
-      onScroll: (event) => {
-        const offsetX = !vertical
-          ? event.contentOffset.x
-          : event.contentOffset.y; // Get the horizontal scroll offset
-        scrollX.set(offsetX); // Update the scroll position for animations
-        const nextIndex = Math.round(
-          offsetX / (!vertical ? itemWidth! : itemHeight!)
-        ); // Calculate the current index
-        // If the index changes, call the onSnap callback
-        if (nextIndex !== currentIndex) {
-          runOnJS(setCurrentIndex)(nextIndex); // Update the state with the new index
-          runOnJS(onSnap)(nextIndex);
-        }
-      },
+  const updatePhysicalIndex = useCallback(
+    (physicalIndex: number) => {
+      physicalIndexRef.current = physicalIndex;
+      const logicalIndex = isLoopEnabled
+        ? physicalIndex % data.length
+        : Math.max(0, Math.min(physicalIndex, data.length - 1));
+      currentIndexRef.current = logicalIndex;
+      setCurrentIndex(logicalIndex);
     },
-    [currentIndex, itemWidth, itemHeight, onSnap, scrollX]
+    [data.length, isLoopEnabled]
+  );
+
+  const reportSnappedIndex = useCallback(
+    (physicalIndex: number) => {
+      const logicalIndex = isLoopEnabled
+        ? physicalIndex % data.length
+        : Math.max(0, Math.min(physicalIndex, data.length - 1));
+      updatePhysicalIndex(physicalIndex);
+      if (logicalIndex !== lastSnappedIndexRef.current) {
+        lastSnappedIndexRef.current = logicalIndex;
+        onSnap(logicalIndex);
+      }
+    },
+    [data.length, isLoopEnabled, onSnap, updatePhysicalIndex]
   );
 
   /**
    * Calculates the static offset of an item based on its index.
-   * This is used when we want to programmatically scroll to a specific item.
    */
   const calculateItemOffsetStatic = useCallback(
-    (index: number) => index * (!vertical ? itemWidth! : itemHeight!),
-    [vertical, itemWidth, itemHeight]
+    (index: number) => index * itemSize,
+    [itemSize]
+  );
+
+  const settleAtPhysicalIndex = useCallback(
+    (physicalIndex: number) => {
+      reportSnappedIndex(physicalIndex);
+      const logicalIndex = isLoopEnabled
+        ? physicalIndex % data.length
+        : Math.max(0, Math.min(physicalIndex, data.length - 1));
+
+      if (
+        isLoopEnabled &&
+        (physicalIndex < data.length || physicalIndex >= data.length * 2)
+      ) {
+        const centeredIndex = data.length + logicalIndex;
+        physicalIndexRef.current = centeredIndex;
+        flatListRef.current?.scrollToOffset({
+          animated: false,
+          offset: calculateItemOffsetStatic(centeredIndex),
+        });
+      }
+    },
+    [calculateItemOffsetStatic, data.length, isLoopEnabled, reportSnappedIndex]
   );
 
   /**
+   * handleScroll is invoked during the scroll event to update the current index.
+   */
+  const scrollHandler = useAnimatedScrollHandler(
+    {
+      onScroll: (event) => {
+        const offset = vertical ? event.contentOffset.y : event.contentOffset.x;
+        scrollX.set(offset);
+        const physicalIndex = Math.round(offset / itemSize);
+        const nextIndex = isLoopEnabled
+          ? physicalIndex % data.length
+          : Math.max(0, Math.min(physicalIndex, data.length - 1));
+        if (nextIndex !== currentIndex) {
+          runOnJS(updatePhysicalIndex)(physicalIndex);
+        }
+      },
+    },
+    [
+      currentIndex,
+      data.length,
+      isLoopEnabled,
+      itemSize,
+      updatePhysicalIndex,
+      vertical,
+    ]
+  );
+
+  const handleMomentumScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offset = vertical
+        ? event.nativeEvent.contentOffset.y
+        : event.nativeEvent.contentOffset.x;
+      const physicalIndex = Math.round(offset / itemSize);
+      if (snapTimeoutRef.current) {
+        clearTimeout(snapTimeoutRef.current);
+        snapTimeoutRef.current = null;
+      }
+      settleAtPhysicalIndex(physicalIndex);
+
+      onMomentumScrollEnd?.();
+    },
+    [itemSize, onMomentumScrollEnd, settleAtPhysicalIndex, vertical]
+  );
+
+  const handleMomentumScrollBegin = useCallback(() => {
+    if (snapTimeoutRef.current) {
+      clearTimeout(snapTimeoutRef.current);
+      snapTimeoutRef.current = null;
+    }
+    onMomentumScrollBegin?.();
+  }, [onMomentumScrollBegin]);
+
+  const handleScrollEndDrag = useCallback(() => {
+    if (snapTimeoutRef.current) {
+      clearTimeout(snapTimeoutRef.current);
+    }
+    snapTimeoutRef.current = setTimeout(() => {
+      snapTimeoutRef.current = null;
+      settleAtPhysicalIndex(physicalIndexRef.current);
+    }, 300);
+  }, [settleAtPhysicalIndex]);
+
+  /**
    * goToIndex scrolls to a specific index and updates the current index state.
-   * It also triggers the snap-to-item callback (`onSnap`).
+   * The requested index wraps when looping and clamps otherwise.
    */
   const goToIndex = useCallback(
     (index: number) => {
-      // Calculate the index with wrapping around (modulo operation)
-      let loopedIndex = index;
-      if (loop) {
-        loopedIndex = (index + data.length) % data.length;
+      if (!Number.isFinite(index)) {
+        throw new RangeError('index must be a finite number');
       }
-      // Ensure the FlatList reference is available before attempting to scroll
+      if (data.length === 0) {
+        return;
+      }
+
+      let loopedIndex = Math.max(
+        0,
+        Math.min(Math.trunc(index), data.length - 1)
+      );
+      if (loop) {
+        loopedIndex =
+          ((Math.trunc(index) % data.length) + data.length) % data.length;
+      }
       if (flatListRef.current) {
-        const offset = calculateItemOffsetStatic(loopedIndex); // Calculate the offset for the given index
-        flatListRef.current?.scrollToOffset({ animated: true, offset }); // Scroll to the desired offset
-        setCurrentIndex(loopedIndex); // Update the current index state
-        onSnap(loopedIndex); // Trigger the onSnap callback to notify the parent component
+        const physicalIndex = isLoopEnabled
+          ? data.length + loopedIndex
+          : loopedIndex;
+        flatListRef.current.scrollToOffset({
+          animated: true,
+          offset: calculateItemOffsetStatic(physicalIndex),
+        });
+        updatePhysicalIndex(physicalIndex);
       }
     },
-    [loop, data.length, calculateItemOffsetStatic, onSnap]
+    [
+      loop,
+      data.length,
+      calculateItemOffsetStatic,
+      isLoopEnabled,
+      updatePhysicalIndex,
+    ]
   );
 
   /**
@@ -232,6 +349,10 @@ const CarouselMomentum = <Item,>(
    * It only starts if autoplay is not already running.
    */
   const startAutoplay = useCallback(() => {
+    if (data.length <= 1) {
+      stopAutoplay();
+      return;
+    }
     // Start the autoplay cycle only if it's not already running
     if (autoplayRef.current) {
       return;
@@ -239,29 +360,19 @@ const CarouselMomentum = <Item,>(
     autoplayRef.current = setInterval(
       () => {
         // Automatically loop to the next index and reset to 0 if at the last item
-        let nextIndex = 0;
         if (loop) {
-          nextIndex = (currentIndex + 1) % data.length;
-          goToIndex(nextIndex);
+          goToIndex(currentIndexRef.current + 1);
+        } else if (currentIndexRef.current + 1 > data.length - 1) {
+          stopAutoplay();
         } else {
-          if (currentIndex + 1 > data.length - 1) {
-            stopAutoplay();
-          } else {
-            nextIndex = currentIndex + 1;
-            goToIndex(nextIndex);
-          }
+          goToIndex(currentIndexRef.current + 1);
         }
       },
-      autoPlayInterval ? autoPlayInterval : 3000
+      Number.isFinite(autoPlayInterval) && autoPlayInterval! > 0
+        ? autoPlayInterval!
+        : 3000
     ); // Advance every 3 seconds
-  }, [
-    autoPlayInterval,
-    loop,
-    currentIndex,
-    data.length,
-    goToIndex,
-    stopAutoplay,
-  ]);
+  }, [autoPlayInterval, loop, data.length, goToIndex, stopAutoplay]);
 
   // UseEffect hook to start/stop autoplay based on the `autoPlay` prop
   useEffect(() => {
@@ -279,14 +390,52 @@ const CarouselMomentum = <Item,>(
     };
   }, [autoPlay, startAutoplay, stopAutoplay]);
 
+  useEffect(() => {
+    if (snapTimeoutRef.current) {
+      clearTimeout(snapTimeoutRef.current);
+      snapTimeoutRef.current = null;
+    }
+    const nextIndex =
+      data.length === 0
+        ? 0
+        : loop
+          ? currentIndexRef.current % data.length
+          : Math.min(currentIndexRef.current, data.length - 1);
+    currentIndexRef.current = nextIndex;
+    physicalIndexRef.current = isLoopEnabled
+      ? data.length + nextIndex
+      : nextIndex;
+    lastSnappedIndexRef.current = nextIndex;
+    setCurrentIndex(nextIndex);
+    flatListRef.current?.scrollToOffset({
+      animated: false,
+      offset:
+        data.length === 0
+          ? 0
+          : calculateItemOffsetStatic(
+              isLoopEnabled ? data.length + nextIndex : nextIndex
+            ),
+    });
+  }, [calculateItemOffsetStatic, data.length, isLoopEnabled, loop]);
+
+  useEffect(
+    () => () => {
+      if (snapTimeoutRef.current) {
+        clearTimeout(snapTimeoutRef.current);
+      }
+    },
+    []
+  );
+
   const getHandleItemInternalRef = useCallback(
     (index: number) => {
-      return (_ref: View | null) => {
-        if (index !== currentIndex || _ref === null) {
+      return (itemRef: View | null) => {
+        const logicalIndex = isLoopEnabled ? index % data.length : index;
+        if (logicalIndex !== currentIndexRef.current || itemRef === null) {
           return;
         }
 
-        const castedRef = _ref as FindNodeHandleParam;
+        const castedRef = itemRef as FindNodeHandleParam;
         const reactTag = findNodeHandle(castedRef);
         if (!reactTag) {
           return;
@@ -294,7 +443,7 @@ const CarouselMomentum = <Item,>(
         AccessibilityInfo.setAccessibilityFocus(reactTag);
       };
     },
-    [currentIndex]
+    [data.length, isLoopEnabled]
   );
 
   /**
@@ -316,12 +465,20 @@ const CarouselMomentum = <Item,>(
    */
   const renderItemInternal = useCallback<ListRenderItem<Item>>(
     (info) => {
+      const logicalIndex = isLoopEnabled
+        ? info.index % data.length
+        : info.index;
       return (
         <ItemCarousel
           getHandleItemInternalRef={getHandleItemInternalRef}
           itemStyle={itemStyle}
           renderItem={renderItem}
           info={info}
+          renderInfo={
+            logicalIndex === info.index
+              ? info
+              : { ...info, index: logicalIndex }
+          }
           itemWidth={itemWidth!}
           inactiveScale={inactiveScale}
           scrollX={scrollX}
@@ -335,8 +492,10 @@ const CarouselMomentum = <Item,>(
     [
       animation,
       customAnimation,
+      data.length,
       getHandleItemInternalRef,
       inactiveScale,
+      isLoopEnabled,
       itemHeight,
       itemStyle,
       itemWidth,
@@ -358,17 +517,30 @@ const CarouselMomentum = <Item,>(
       <Animated.FlatList
         {...otherProps}
         ref={flatListRef} // Reference to FlatList for direct manipulation
-        data={data} // The data to display in the carousel
-        keyExtractor={keyExtractor ?? keyExtractorInternal} // Use the provided or internal keyExtractor
+        data={listData} // The data to display in the carousel
+        keyExtractor={(item, index) =>
+          isLoopEnabled
+            ? `${keyExtractorInternal(item, index % data.length)}-${index}`
+            : keyExtractor
+              ? keyExtractor(item, index)
+              : keyExtractorInternal(item, index)
+        }
+        initialScrollIndex={isLoopEnabled ? data.length : 0}
+        getItemLayout={(_, index) => ({
+          length: itemSize,
+          offset: itemSize * index,
+          index,
+        })}
         horizontal={!vertical} // Display items horizontally
         showsHorizontalScrollIndicator={false} // Hide the scroll indicator
         snapToInterval={!vertical ? itemWidth : itemHeight} // Snapping behavior after each item
         decelerationRate="fast" // Fast deceleration for smooth scrolling
         bounces={false} // Disable the bounce effect on scroll edges
         onScroll={scrollHandler} // Handle scroll events
+        onScrollEndDrag={handleScrollEndDrag}
         scrollEventThrottle={16} // Throttle scroll event updates for smoother performance
-        onMomentumScrollEnd={onMomentumScrollEnd} // Callback triggered when momentum scroll ends
-        onMomentumScrollBegin={onMomentumScrollBegin} // Callback triggered when momentum scroll starts
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        onMomentumScrollBegin={handleMomentumScrollBegin}
         renderItem={renderItemInternal} // Render each item with animation
         contentContainerStyle={
           !vertical
